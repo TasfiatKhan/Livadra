@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "HumorAI",
+    "slug": "humorai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.humorai.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.humorai.app"
+    }
+  }
+}
