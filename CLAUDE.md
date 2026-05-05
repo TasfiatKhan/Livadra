@@ -29,9 +29,9 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 ## Feature Scope
 | Priority | Feature | Status |
 |----------|---------|--------|
-| 1 | Onboarding / Personality Profile | not started |
-| 2 | Texting Mode | not started |
-| 3 | Live Mode | not started |
+| 1 | Onboarding / Personality Profile | complete |
+| 2 | Texting Mode | complete |
+| 3 | Live Mode | complete |
 | — | Delivery Coaching (v2) | out of scope |
 
 ## Working Style
@@ -53,3 +53,4 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 - **2026-05-05** — `profiles` app written: `UserProfile` model (HumorStyle ×8, PersonaType ×5 archetypes, ConfidenceLevel ×4, CulturalTone country-level USA/CANADA), signal auto-creates profile on user creation, `ProfileSerializer` + `ProfileUpdateSerializer` (auto-sets `is_onboarding_complete` when all 4 personality fields filled), `ProfileView` (GET/PUT/PATCH `/api/profiles/me/`), Redis cache module (`get/set/invalidate_cached_profile`), cache re-primed on every update.
 - **2026-05-05** — Docker Engine installed on Ubuntu 24. `backend/.env` created from `.env.example` (DB_HOST=db, REDIS_URL uses redis service name). Containers running, migrations applied, admin verified, JWT auth tested.
 - **2026-05-05** — `services/ai_service.py` written: `AIService` class with Redis-first profile loading, three-layer prompt assembly, per-mode `max_tokens` (texting 512, live 1024), streaming via `client.messages.stream()`. Module-level singleton `ai_service`. `services/redis_client.py` written. Prompt templates written for all three layers in `prompts/v1/`. `personality_description` added to both profile serializers (was missing after field was added to model).
+- **2026-05-05** — `humor` app complete: `TextingModeView` (POST `/api/humor/texting/`) and `LiveModeView` (POST `/api/humor/live/`) — both JWT-authenticated, onboarding-gated (403 if `is_onboarding_complete` is false), streaming `text/plain` responses via `StreamingHttpResponse`. Backend feature-complete for all three priority features.
