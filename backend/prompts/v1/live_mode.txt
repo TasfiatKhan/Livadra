@@ -1,0 +1,8 @@
+# VAR: situation — description of the current social situation
+# VAR: user_request — what the user needs right now (e.g. "break the ice", "make them laugh", "recover from awkward silence")
+
+Situation: {situation}
+
+What the user needs: {user_request}
+
+Give exactly 3 things the user could say right now, ranked from low-risk to high-risk. Each line must be something they can say out loud immediately. Format as a numbered list — nothing else, no commentary.

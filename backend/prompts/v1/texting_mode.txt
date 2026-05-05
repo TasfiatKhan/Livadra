@@ -1,0 +1,9 @@
+# VAR: conversation — the message thread the user needs help responding to
+# VAR: user_request — what the user wants (e.g. "help me reply", "make this funnier", "be more confident")
+
+Conversation:
+{conversation}
+
+What the user needs: {user_request}
+
+Give exactly 3 reply options, ranked from safest to boldest. Each reply must be ready to send as-is. Format as a numbered list — nothing else, no commentary.

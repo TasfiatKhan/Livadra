@@ -12,7 +12,7 @@ Mobile-first app where users get an AI agent that helps them be funny and naviga
 | Database | PostgreSQL 15 |
 | Cache | Redis 7 |
 | Auth | JWT via djangorestframework-simplejwt |
-| AI | Claude API — `claude-sonnet-4-20250514` |
+| AI | Claude API — `claude-sonnet-4-6` |
 | Streaming | Django `StreamingHttpResponse` |
 | Frontend | React Native + Expo bare workflow |
 | Language | TypeScript (frontend), Python 3.11 (backend) |
@@ -51,4 +51,5 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 - **2026-05-03** — `manage.py`, `config/wsgi.py`, `config/asgi.py`, `config/urls.py` written. App `urls.py` stubs added. Backend is bootable.
 - **2026-05-03** — `users` app written: custom `User` model (email as username, `AbstractBaseUser`), registration and me endpoints. `AUTH_USER_MODEL` set in `base.py`.
 - **2026-05-05** — `profiles` app written: `UserProfile` model (HumorStyle ×8, PersonaType ×5 archetypes, ConfidenceLevel ×4, CulturalTone country-level USA/CANADA), signal auto-creates profile on user creation, `ProfileSerializer` + `ProfileUpdateSerializer` (auto-sets `is_onboarding_complete` when all 4 personality fields filled), `ProfileView` (GET/PUT/PATCH `/api/profiles/me/`), Redis cache module (`get/set/invalidate_cached_profile`), cache re-primed on every update.
-- **2026-05-05** — Docker Engine installed on Ubuntu 24. `backend/.env` created from `.env.example` (DB_HOST=db, REDIS_URL uses redis service name). Containers not yet started. Next: `docker compose up --build -d` then `docker compose exec backend python manage.py migrate`.
+- **2026-05-05** — Docker Engine installed on Ubuntu 24. `backend/.env` created from `.env.example` (DB_HOST=db, REDIS_URL uses redis service name). Containers running, migrations applied, admin verified, JWT auth tested.
+- **2026-05-05** — `services/ai_service.py` written: `AIService` class with Redis-first profile loading, three-layer prompt assembly, per-mode `max_tokens` (texting 512, live 1024), streaming via `client.messages.stream()`. Module-level singleton `ai_service`. `services/redis_client.py` written. Prompt templates written for all three layers in `prompts/v1/`. `personality_description` added to both profile serializers (was missing after field was added to model).
