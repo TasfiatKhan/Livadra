@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+*.pyo
+.git/
+.gitignore
+*.md
+media/
+staticfiles/
+.venv/
+venv/
