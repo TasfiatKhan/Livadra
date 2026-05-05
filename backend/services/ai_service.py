@@ -44,11 +44,11 @@ class AIService:
             personality_description=profile.get('personality_description', ''),
         )
 
-    def stream_texting_response(self, user_id: int, conversation: str, user_request: str):
+    def stream_texting_response(self, user_id: int, context: str, user_request: str):
         profile = self._get_profile(user_id)
         system_prompt = self._build_system_prompt(profile)
         user_message = self._texting_template.format(
-            conversation=conversation,
+            context=context,
             user_request=user_request,
         )
         return self._stream(system_prompt, user_message, self._MAX_TOKENS['texting'])

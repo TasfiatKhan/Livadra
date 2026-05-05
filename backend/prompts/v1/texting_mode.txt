@@ -1,8 +1,8 @@
-# VAR: conversation — the message thread the user needs help responding to
+# VAR: context — the message thread the user needs help responding to
 # VAR: user_request — what the user wants (e.g. "help me reply", "make this funnier", "be more confident")
 
-Conversation:
-{conversation}
+Context:
+{context}
 
 What the user needs: {user_request}
 

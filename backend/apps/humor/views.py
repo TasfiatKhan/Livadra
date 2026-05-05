@@ -24,7 +24,7 @@ class TextingModeView(APIView):
 
         stream = ai_service.stream_texting_response(
             user_id=request.user.id,
-            conversation=serializer.validated_data['conversation'],
+            context=serializer.validated_data['context'],
             user_request=serializer.validated_data['user_request'],
         )
         return StreamingHttpResponse(stream, content_type='text/plain; charset=utf-8')
