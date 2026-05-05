@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from services.ai_service import ai_service
-from .serializers import TextingRequestSerializer
+from .serializers import TextingRequestSerializer, LiveRequestSerializer
 
 
 class TextingModeView(APIView):
@@ -25,6 +25,28 @@ class TextingModeView(APIView):
         stream = ai_service.stream_texting_response(
             user_id=request.user.id,
             conversation=serializer.validated_data['conversation'],
+            user_request=serializer.validated_data['user_request'],
+        )
+        return StreamingHttpResponse(stream, content_type='text/plain; charset=utf-8')
+
+
+class LiveModeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = LiveRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        profile = getattr(request.user, 'profile', None)
+        if not profile or not profile.is_onboarding_complete:
+            return Response(
+                {'detail': 'Please complete your profile before using this feature.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        stream = ai_service.stream_live_response(
+            user_id=request.user.id,
+            situation=serializer.validated_data['situation'],
             user_request=serializer.validated_data['user_request'],
         )
         return StreamingHttpResponse(stream, content_type='text/plain; charset=utf-8')
