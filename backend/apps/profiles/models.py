@@ -40,6 +40,7 @@ class UserProfile(models.Model):
     persona_type = models.CharField(max_length=20, choices=PersonaType.choices, blank=True, default='')
     confidence_level = models.CharField(max_length=20, choices=ConfidenceLevel.choices, blank=True, default='')
     cultural_tone = models.CharField(max_length=30, choices=CulturalTone.choices, blank=True, default='')
+    personality_description = models.TextField(max_length=1000, blank=True, default='')
     is_onboarding_complete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
