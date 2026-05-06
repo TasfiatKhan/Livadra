@@ -44,7 +44,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
     setIsSubmitting(true);
     try {
-      await register(email.trim(), password);
+      await register(email.trim(), password, passwordConfirm);
     } catch (err) {
       setError(extractError(err));
     } finally {

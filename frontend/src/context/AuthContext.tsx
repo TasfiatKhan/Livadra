@@ -6,7 +6,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, passwordConfirm: string) => Promise<void>;
   logout: () => Promise<void>;
   signOut: () => void;
 };
@@ -28,8 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(true);
   }, []);
 
-  const register = useCallback(async (email: string, password: string) => {
-    await authService.register(email, password);
+  const register = useCallback(async (email: string, password: string, passwordConfirm: string) => {
+    await authService.register(email, password, passwordConfirm);
     setIsAuthenticated(true);
   }, []);
 
