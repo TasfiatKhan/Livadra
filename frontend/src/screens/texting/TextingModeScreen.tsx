@@ -13,22 +13,46 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
-import { useStreamingResponse } from '../../hooks/useStreamingResponse';
+import { useAIResponse } from '../../hooks/useAIResponse';
 import { TEXTING_PATH } from '../../services/humorService';
+import { AIOption } from '../../types/humor';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'TextingMode'>;
 
+const OPTION_LABELS: Record<AIOption['type'], string> = {
+  safe: 'Safe',
+  playful: 'Playful',
+  bold: 'Bold',
+};
+
+const OPTION_COLORS: Record<AIOption['type'], string> = {
+  safe: '#4a90d9',
+  playful: '#e67e22',
+  bold: '#c0392b',
+};
+
+function OptionCard({ option }: { option: AIOption }) {
+  const color = OPTION_COLORS[option.type];
+  return (
+    <View style={styles.optionCard}>
+      <View style={[styles.optionPill, { backgroundColor: color }]}>
+        <Text style={styles.optionPillText}>{OPTION_LABELS[option.type]}</Text>
+      </View>
+      <Text style={styles.optionText}>{option.text}</Text>
+      <Text style={styles.optionNote}>{option.note}</Text>
+    </View>
+  );
+}
+
 export default function TextingModeScreen({ navigation }: Props) {
-  const { response, isStreaming, error, stream, reset } = useStreamingResponse();
+  const { response, isLoading, error, submit, reset } = useAIResponse();
   const [context, setContext] = useState('');
   const [userRequest, setUserRequest] = useState('');
 
   const handleSubmit = () => {
     reset();
-    stream(TEXTING_PATH, { context, user_request: userRequest });
+    submit(TEXTING_PATH, { context, user_request: userRequest });
   };
-
-  const showResponse = response !== '' || isStreaming;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -51,7 +75,7 @@ export default function TextingModeScreen({ navigation }: Props) {
             multiline
             numberOfLines={5}
             textAlignVertical="top"
-            editable={!isStreaming}
+            editable={!isLoading}
           />
 
           <Text style={styles.label}>What do you need?</Text>
@@ -60,29 +84,34 @@ export default function TextingModeScreen({ navigation }: Props) {
             placeholder="e.g. Help me reply to this"
             value={userRequest}
             onChangeText={setUserRequest}
-            editable={!isStreaming}
+            editable={!isLoading}
           />
 
           <TouchableOpacity
-            style={[styles.button, isStreaming && styles.buttonDisabled]}
+            style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleSubmit}
-            disabled={isStreaming}
+            disabled={isLoading}
           >
-            <Text style={styles.buttonText}>
-              {isStreaming ? 'Thinking…' : 'Get suggestions'}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.buttonText}>Get suggestions</Text>
+            )}
           </TouchableOpacity>
 
-          {showResponse && (
-            <View style={styles.responseCard}>
-              <Text style={styles.responseText}>{response}</Text>
-              {isStreaming && (
-                <ActivityIndicator style={styles.indicator} size="small" />
-              )}
+          {error !== '' && <Text style={styles.error}>{error}</Text>}
+
+          {response && (
+            <View style={styles.resultsContainer}>
+              {response.options.map((option) => (
+                <OptionCard key={option.type} option={option} />
+              ))}
+              <View style={styles.deliveryCard}>
+                <Text style={styles.deliveryLabel}>Delivery</Text>
+                <Text style={styles.deliveryText}>{response.delivery}</Text>
+              </View>
             </View>
           )}
-
-          {error !== '' && <Text style={styles.error}>{error}</Text>}
 
           <TouchableOpacity
             style={styles.editLink}
@@ -146,22 +175,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  responseCard: {
+  resultsContainer: {
     marginTop: 24,
+    gap: 12,
+  },
+  optionCard: {
     padding: 16,
     borderRadius: 12,
     backgroundColor: '#f7f7f7',
     borderWidth: 1,
     borderColor: '#eee',
-    gap: 12,
+    gap: 10,
   },
-  responseText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#111',
-  },
-  indicator: {
+  optionPill: {
     alignSelf: 'flex-start',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  optionPillText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  optionText: {
+    fontSize: 16,
+    lineHeight: 23,
+    color: '#111',
+    fontWeight: '500',
+  },
+  optionNote: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#888',
+    fontStyle: 'italic',
+  },
+  deliveryCard: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#f0f4ff',
+    borderWidth: 1,
+    borderColor: '#d6e0ff',
+    gap: 6,
+  },
+  deliveryLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4a6cf7',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  deliveryText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#333',
   },
   error: {
     color: '#e53e3e',

@@ -1,23 +1,24 @@
 import { useState, useCallback } from 'react';
 import api from '../services/api';
+import { AIResponse } from '../types/humor';
 
-export function useStreamingResponse() {
-  const [response, setResponse] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
+export function useAIResponse() {
+  const [response, setResponse] = useState<AIResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const reset = useCallback(() => {
-    setResponse('');
+    setResponse(null);
     setError('');
   }, []);
 
-  const stream = useCallback(async (path: string, body: object): Promise<void> => {
-    setResponse('');
+  const submit = useCallback(async (path: string, body: object): Promise<void> => {
+    setResponse(null);
     setError('');
-    setIsStreaming(true);
+    setIsLoading(true);
 
     try {
-      const { data } = await api.post<string>(path, body, { responseType: 'text' });
+      const { data } = await api.post<AIResponse>(path, body);
       setResponse(data);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -27,9 +28,9 @@ export function useStreamingResponse() {
         setError('Something went wrong. Please try again.');
       }
     } finally {
-      setIsStreaming(false);
+      setIsLoading(false);
     }
   }, []);
 
-  return { response, isStreaming, error, stream, reset };
+  return { response, isLoading, error, submit, reset };
 }

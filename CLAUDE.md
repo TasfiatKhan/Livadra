@@ -33,7 +33,6 @@ The more context the user provides, the better and more personalized the output.
 
 ## Upcoming Changes (not yet implemented)
 - Profile model will be expanded with relationship context and social anxiety level fields
-- Frontend will be updated to render 4-option structured responses (TextingModeScreen, LiveModeScreen)
 
 ## Stack
 | Layer | Technology |
@@ -62,7 +61,7 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 | 1 | Onboarding / Personality Profile | complete |
 | 2 | Texting Mode | complete |
 | 3 | Live Mode | complete |
-| 4 | Structured JSON response format (4 options) | backend complete, frontend pending |
+| 4 | Structured JSON response format (3 options) | complete — full stack |
 | 5 | Expanded profile (relationship context, social anxiety) | upcoming |
 | — | Delivery Coaching (v2) | out of scope |
 
@@ -93,3 +92,4 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 - **2026-05-06** — Bug fixes and device compatibility: index.js entry point added (registerRootComponent for bare workflow, package.json main updated), password_confirm threaded through RegisterScreen → AuthContext → authService → POST body, useStreamingResponse replaced ReadableStream approach (not supported on Hermes) with axios api.post + responseType:text — full response displayed at once. ALLOWED_HOSTS updated in development.py for physical device IP (10.0.0.228).
 - **2026-05-06** — Product vision refined: reframed from humor/joke generator to social confidence and conversational intelligence assistant. New response format (structured JSON, 4 options), Context Quality Principle added, upcoming changes documented in CLAUDE.md.
 - **2026-05-06** — Prompt templates rewritten to v2: social intelligence framing throughout, structured JSON output format (3 options: safe/playful/bold, each with text + note, plus top-level delivery field), mode-specific delivery guidance. `ai_service.py` updated: `StreamingHttpResponse` replaced with `messages.create()` + `json.loads()`, `_build_system_prompt` switched to `str.replace()` to avoid `.format()` KeyError on JSON braces in template, methods renamed `get_texting_response` / `get_live_response`. `views.py` updated to return `Response(data)`. Backend verified working end-to-end with new format. Frontend screens not yet updated.
+- **2026-05-06** — Frontend updated to render structured JSON responses. `useStreamingResponse` replaced with `useAIResponse` (`src/hooks/useAIResponse.ts`): response typed as `AIResponse | null`, renamed `isStreaming` → `isLoading`, `stream` → `submit`, removed `responseType: 'text'` override so Axios parses JSON natively. `AIOption`, `AIOptionType`, `AIResponse` types added to `src/types/humor.ts`. TextingModeScreen and LiveModeScreen updated: three `OptionCard`s (colored pill label, response text, italic delivery note) + blue `DeliveryCard` for top-level coaching. Full stack now complete end-to-end.
