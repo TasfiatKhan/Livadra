@@ -1,0 +1,163 @@
+import React, { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../../navigation/types';
+import { useAuth } from '../../hooks/useAuth';
+
+type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
+
+function extractError(err: unknown): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const data = (err as any).response?.data;
+    if (data?.detail) return data.detail;
+    if (data?.email?.[0]) return data.email[0];
+    if (data?.password?.[0]) return data.password[0];
+    if (data?.non_field_errors?.[0]) return data.non_field_errors[0];
+  }
+  return 'Something went wrong. Please try again.';
+}
+
+export default function RegisterScreen({ navigation }: Props) {
+  const { register } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleRegister = async () => {
+    setError('');
+
+    if (password !== passwordConfirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await register(email.trim(), password);
+    } catch (err) {
+      setError(extractError(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>Create account</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!isSubmitting}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!isSubmitting}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm password"
+            value={passwordConfirm}
+            onChangeText={setPasswordConfirm}
+            secureTextEntry
+            editable={!isSubmitting}
+          />
+
+          {error !== '' && <Text style={styles.error}>{error}</Text>}
+
+          <TouchableOpacity
+            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+            onPress={handleRegister}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.buttonText}>{isSubmitting ? 'Creating account…' : 'Register'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.link}>
+              Already have an account? <Text style={styles.linkBold}>Log in</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#fff' },
+  flex: { flex: 1 },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  error: {
+    color: '#e53e3e',
+    fontSize: 14,
+  },
+  button: {
+    backgroundColor: '#000',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  link: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  linkBold: {
+    fontWeight: '700',
+    color: '#000',
+  },
+});
