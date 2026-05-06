@@ -1,4 +1,3 @@
-from django.http import StreamingHttpResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,12 +21,12 @@ class TextingModeView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        stream = ai_service.stream_texting_response(
+        data = ai_service.get_texting_response(
             user_id=request.user.id,
             context=serializer.validated_data['context'],
             user_request=serializer.validated_data['user_request'],
         )
-        return StreamingHttpResponse(stream, content_type='text/plain; charset=utf-8')
+        return Response(data)
 
 
 class LiveModeView(APIView):
@@ -44,9 +43,9 @@ class LiveModeView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        stream = ai_service.stream_live_response(
+        data = ai_service.get_live_response(
             user_id=request.user.id,
             situation=serializer.validated_data['situation'],
             user_request=serializer.validated_data['user_request'],
         )
-        return StreamingHttpResponse(stream, content_type='text/plain; charset=utf-8')
+        return Response(data)

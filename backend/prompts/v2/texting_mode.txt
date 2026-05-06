@@ -1,0 +1,11 @@
+# VAR: context — the conversation thread or message the user needs help with
+# VAR: user_request — what the user wants to achieve
+
+Conversation:
+{context}
+
+What they want: {user_request}
+
+Read this conversation closely. Understand the dynamic — who has the energy, what tone the other person is bringing, what has been left open. Write responses that feel like a natural next move in this specific thread, not generic options that could fit any conversation.
+
+For the delivery field: give texting-specific guidance — when to send it, how much length feels right, what to do if the other person responds a certain way.

@@ -1,0 +1,11 @@
+# VAR: situation — description of the current social situation
+# VAR: user_request — what the user needs right now
+
+Situation:
+{situation}
+
+What they need: {user_request}
+
+This is real-time and in-person. Every "text" response must be something they can say out loud naturally — short enough to land without losing the moment, conversational enough that it does not sound rehearsed. The three options should escalate in social risk: safe lands comfortably with anyone, playful creates genuine energy, bold makes a move.
+
+For the delivery field: focus on in-person factors — timing within the conversation, body language, eye contact, how to hold space after saying it.

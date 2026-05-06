@@ -1,16 +1,17 @@
+import json
 from pathlib import Path
 from decouple import config
 import anthropic
 
 from apps.profiles.cache import get_cached_profile, set_cached_profile
 
-_PROMPT_DIR = Path(__file__).resolve().parent.parent / 'prompts' / 'v1'
+_PROMPT_DIR = Path(__file__).resolve().parent.parent / 'prompts' / 'v2'
 
 
 class AIService:
     MODEL = 'claude-sonnet-4-6'
     _MAX_TOKENS = {
-        'texting': 512,
+        'texting': 600,
         'live': 1024,
     }
 
@@ -36,41 +37,45 @@ class AIService:
         return profile
 
     def _build_system_prompt(self, profile: dict) -> str:
-        return self._personality_template.format(
-            humor_style=profile.get('humor_style', ''),
-            persona_type=profile.get('persona_type', ''),
-            confidence_level=profile.get('confidence_level', ''),
-            cultural_tone=profile.get('cultural_tone', ''),
-            personality_description=profile.get('personality_description', ''),
+        return (
+            self._personality_template
+            .replace('{humor_style}', profile.get('humor_style', ''))
+            .replace('{persona_type}', profile.get('persona_type', ''))
+            .replace('{confidence_level}', profile.get('confidence_level', ''))
+            .replace('{cultural_tone}', profile.get('cultural_tone', ''))
+            .replace('{personality_description}', profile.get('personality_description', ''))
         )
 
-    def stream_texting_response(self, user_id: int, context: str, user_request: str):
+    def get_texting_response(self, user_id: int, context: str, user_request: str) -> dict:
         profile = self._get_profile(user_id)
         system_prompt = self._build_system_prompt(profile)
         user_message = self._texting_template.format(
             context=context,
             user_request=user_request,
         )
-        return self._stream(system_prompt, user_message, self._MAX_TOKENS['texting'])
+        return self._call(system_prompt, user_message, self._MAX_TOKENS['texting'])
 
-    def stream_live_response(self, user_id: int, situation: str, user_request: str):
+    def get_live_response(self, user_id: int, situation: str, user_request: str) -> dict:
         profile = self._get_profile(user_id)
         system_prompt = self._build_system_prompt(profile)
         user_message = self._live_template.format(
             situation=situation,
             user_request=user_request,
         )
-        return self._stream(system_prompt, user_message, self._MAX_TOKENS['live'])
+        return self._call(system_prompt, user_message, self._MAX_TOKENS['live'])
 
-    def _stream(self, system_prompt: str, user_message: str, max_tokens: int):
-        with self._client.messages.stream(
+    def _call(self, system_prompt: str, user_message: str, max_tokens: int) -> dict:
+        message = self._client.messages.create(
             model=self.MODEL,
             max_tokens=max_tokens,
             system=system_prompt,
             messages=[{'role': 'user', 'content': user_message}],
-        ) as stream:
-            for text in stream.text_stream:
-                yield text
+        )
+        text = message.content[0].text.strip()
+        if text.startswith('```'):
+            lines = text.splitlines()
+            text = '\n'.join(lines[1:-1]).strip()
+        return json.loads(text)
 
 
 ai_service = AIService()
