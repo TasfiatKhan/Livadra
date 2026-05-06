@@ -5,7 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.humorai.app"
@@ -15,6 +17,9 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.humorai.app"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }
