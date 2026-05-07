@@ -30,3 +30,14 @@ export const CULTURAL_TONES: ChoiceOption[] = [
   { value: 'usa', label: 'United States' },
   { value: 'canada', label: 'Canada' },
 ];
+
+export const RELATIONSHIP_CONTEXTS: ChoiceOption[] = [
+  { value: 'stranger', label: 'Stranger' },
+  { value: 'new_acquaintance', label: 'New Acquaintance' },
+  { value: 'crush', label: 'Crush' },
+  { value: 'friend', label: 'Friend' },
+  { value: 'close_friend', label: 'Close Friend' },
+  { value: 'colleague', label: 'Colleague' },
+  { value: 'date', label: 'Date' },
+  { value: 'other', label: 'Other' },
+];

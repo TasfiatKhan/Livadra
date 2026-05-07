@@ -16,6 +16,7 @@ import { MainStackParamList } from '../../navigation/types';
 import { useAIResponse } from '../../hooks/useAIResponse';
 import { TEXTING_PATH } from '../../services/humorService';
 import { AIOption } from '../../types/humor';
+import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'TextingMode'>;
 
@@ -48,11 +49,22 @@ export default function TextingModeScreen({ navigation }: Props) {
   const { response, isLoading, error, submit, reset } = useAIResponse();
   const [context, setContext] = useState('');
   const [userRequest, setUserRequest] = useState('');
+  const [relationshipContext, setRelationshipContext] = useState('');
+  const [relationshipOther, setRelationshipOther] = useState('');
+  const [environment, setEnvironment] = useState('');
 
   const handleSubmit = () => {
     reset();
-    submit(TEXTING_PATH, { context, user_request: userRequest });
+    submit(TEXTING_PATH, {
+      context,
+      user_request: userRequest,
+      relationship_context: relationshipContext,
+      relationship_other: relationshipOther,
+      environment,
+    });
   };
+
+  const canSubmit = relationshipContext !== '' && !isLoading;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -87,10 +99,53 @@ export default function TextingModeScreen({ navigation }: Props) {
             editable={!isLoading}
           />
 
+          <Text style={styles.label}>Who are you talking to?</Text>
+          <View style={styles.chipGrid}>
+            {RELATIONSHIP_CONTEXTS.map((option) => {
+              const selected = relationshipContext === option.value;
+              return (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.chip, selected && styles.chipSelected]}
+                  onPress={() => {
+                    setRelationshipContext(option.value);
+                    if (option.value !== 'other') setRelationshipOther('');
+                  }}
+                  disabled={isLoading}
+                >
+                  <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {relationshipContext === 'other' && (
+            <TextInput
+              style={[styles.input, styles.otherInput]}
+              placeholder="Describe the relationship…"
+              value={relationshipOther}
+              onChangeText={setRelationshipOther}
+              editable={!isLoading}
+            />
+          )}
+
+          <Text style={[styles.label, styles.optionalLabel]}>
+            What's the vibe?{' '}
+            <Text style={styles.optionalHint}>(optional)</Text>
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Describe the vibe… busy bar, late night texting, office lunch break"
+            value={environment}
+            onChangeText={setEnvironment}
+            editable={!isLoading}
+          />
+
           <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
+            style={[styles.button, !canSubmit && styles.buttonDisabled]}
             onPress={handleSubmit}
-            disabled={isLoading}
+            disabled={!canSubmit}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -145,6 +200,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 6,
   },
+  optionalLabel: {
+    flexDirection: 'row',
+  },
+  optionalHint: {
+    fontWeight: '400',
+    color: '#999',
+    fontSize: 14,
+  },
   textArea: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -162,6 +225,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
+  otherInput: {
+    marginTop: 8,
+  },
+  chipGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#f7f7f7',
+  },
+  chipSelected: {
+    backgroundColor: '#000',
+    borderColor: '#000',
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  chipTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
   button: {
     backgroundColor: '#000',
     borderRadius: 8,
@@ -169,7 +260,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  buttonDisabled: { opacity: 0.5 },
+  buttonDisabled: { opacity: 0.4 },
   buttonText: {
     color: '#fff',
     fontSize: 16,
