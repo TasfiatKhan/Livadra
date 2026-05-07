@@ -37,9 +37,7 @@ Each option includes the response text and a brief delivery note.
 The more context the user provides, the better and more personalized the output. The app should actively encourage users to provide rich situational context — who they're talking to, what the relationship is, what the vibe is, what they want to achieve. **Thin context produces generic responses. Rich context produces responses that feel like they were written specifically for that moment.** This principle should inform UX copy, input placeholders, and onboarding guidance throughout the app.
 
 ## Upcoming Changes (not yet implemented)
-- Frontend: `relationship_context` selector + `relationship_other` text input (shown when "other" selected) on TextingModeScreen and LiveModeScreen
-- Frontend: `environment` free-text input on TextingModeScreen and LiveModeScreen
-- Frontend: `social_anxiety_level` selector on PersonalitySetupScreen
+- Migration 0005 (`social_anxiety_level`) still needs to be applied to the database (`python manage.py migrate`)
 
 ## Stack
 | Layer | Technology |
@@ -69,8 +67,8 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 | 2 | Texting Mode | complete |
 | 3 | Live Mode | complete |
 | 4 | Structured JSON response format (3 options) | complete — full stack |
-| 5 | `social_anxiety_level` on profile | backend complete, frontend pending |
-| 6 | `relationship_context` + `relationship_other` + `environment` per-request | backend complete, frontend pending |
+| 5 | `social_anxiety_level` on profile | complete — full stack |
+| 6 | `relationship_context` + `relationship_other` + `environment` per-request | complete — full stack |
 | — | Delivery Coaching (v2) | out of scope |
 
 ## Working Style
@@ -101,4 +99,5 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 - **2026-05-06** — Product vision refined: reframed from humor/joke generator to social confidence and conversational intelligence assistant. New response format (structured JSON, 4 options), Context Quality Principle added, upcoming changes documented in CLAUDE.md.
 - **2026-05-06** — Prompt templates rewritten to v2: social intelligence framing throughout, structured JSON output format (3 options: safe/playful/bold, each with text + note, plus top-level delivery field), mode-specific delivery guidance. `ai_service.py` updated: `StreamingHttpResponse` replaced with `messages.create()` + `json.loads()`, `_build_system_prompt` switched to `str.replace()` to avoid `.format()` KeyError on JSON braces in template, methods renamed `get_texting_response` / `get_live_response`. `views.py` updated to return `Response(data)`. Backend verified working end-to-end with new format. Frontend screens not yet updated.
 - **2026-05-06** — Frontend updated to render structured JSON responses. `useStreamingResponse` replaced with `useAIResponse` (`src/hooks/useAIResponse.ts`): response typed as `AIResponse | null`, renamed `isStreaming` → `isLoading`, `stream` → `submit`, removed `responseType: 'text'` override so Axios parses JSON natively. `AIOption`, `AIOptionType`, `AIResponse` types added to `src/types/humor.ts`. TextingModeScreen and LiveModeScreen updated: three `OptionCard`s (colored pill label, response text, italic delivery note) + blue `DeliveryCard` for top-level coaching. Full stack now complete end-to-end.
+- **2026-05-07** — `social_anxiety_level` chip selector added to PersonalitySetupScreen (Comfortable / Mildly nervous / Often nervous / Social situations are hard). `SOCIAL_ANXIETY_LEVELS` constant added to `src/constants/humor.ts`. `social_anxiety_level` added to `Profile` type and `ProfileUpdate` type in `src/types/profile.ts`. Pre-populated from existing profile on load, defaults to `mild`. Full stack now complete for all expanded profile fields.
 - **2026-05-06** — Major context expansion and framing overhaul. `social_anxiety_level` (none/mild/moderate/high, default mild) added to `UserProfile` — migration pending (`0005`). Non-prescriptive language rule embedded as permanent product philosophy and enforced in `system_personality.txt`: all `note` and `delivery` fields must use suggestion framing, never commands. `relationship_context` (stranger/new_acquaintance/crush/friend/close_friend/colleague/date/other) and `relationship_other` (free text, used when other is selected) and `environment` (optional free text) added to both `TextingRequestSerializer` and `LiveRequestSerializer`. `AIService._resolve_relationship()` substitutes `relationship_other` into the prompt when context is "other". All three v2 prompt templates updated: `system_personality.txt` gets `{social_anxiety_level}` and non-prescriptive framing rules; `texting_mode.txt` and `live_mode.txt` get `{relationship_context}` and `{environment}`. Frontend input fields for new request fields are pending next session.

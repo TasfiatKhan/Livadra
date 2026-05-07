@@ -31,6 +31,13 @@ export const CULTURAL_TONES: ChoiceOption[] = [
   { value: 'canada', label: 'Canada' },
 ];
 
+export const SOCIAL_ANXIETY_LEVELS: ChoiceOption[] = [
+  { value: 'none', label: 'Comfortable' },
+  { value: 'mild', label: 'Mildly nervous' },
+  { value: 'moderate', label: 'Often nervous' },
+  { value: 'high', label: 'Social situations are hard' },
+];
+
 export const RELATIONSHIP_CONTEXTS: ChoiceOption[] = [
   { value: 'stranger', label: 'Stranger' },
   { value: 'new_acquaintance', label: 'New Acquaintance' },

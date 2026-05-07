@@ -18,6 +18,7 @@ import {
   PERSONA_TYPES,
   CONFIDENCE_LEVELS,
   CULTURAL_TONES,
+  SOCIAL_ANXIETY_LEVELS,
 } from '../../constants/humor';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'PersonalitySetup'>;
@@ -61,6 +62,7 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
   const [personaType, setPersonaType] = useState('');
   const [confidenceLevel, setConfidenceLevel] = useState('');
   const [culturalTone, setCulturalTone] = useState('');
+  const [socialAnxietyLevel, setSocialAnxietyLevel] = useState('mild');
   const [personalityDescription, setPersonalityDescription] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +73,7 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
       setPersonaType(profile.persona_type);
       setConfidenceLevel(profile.confidence_level);
       setCulturalTone(profile.cultural_tone);
+      setSocialAnxietyLevel(profile.social_anxiety_level || 'mild');
       setPersonalityDescription(profile.personality_description);
     }
   }, [profile]);
@@ -94,6 +97,7 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
         persona_type: personaType,
         confidence_level: confidenceLevel,
         cultural_tone: culturalTone,
+        social_anxiety_level: socialAnxietyLevel,
         personality_description: personalityDescription,
       });
       navigation.navigate('TextingMode');
@@ -143,6 +147,14 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
           options={CULTURAL_TONES}
           selected={culturalTone}
           onSelect={setCulturalTone}
+          disabled={isSubmitting}
+        />
+
+        <Text style={styles.sectionLabel}>Social anxiety</Text>
+        <ChipGroup
+          options={SOCIAL_ANXIETY_LEVELS}
+          selected={socialAnxietyLevel}
+          onSelect={setSocialAnxietyLevel}
           disabled={isSubmitting}
         />
 
