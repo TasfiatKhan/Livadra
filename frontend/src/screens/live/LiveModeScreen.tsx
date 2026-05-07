@@ -288,7 +288,7 @@ export default function LiveModeScreen({ navigation }: Props) {
             style={styles.editLink}
             onPress={() => navigation.navigate('PersonalitySetup')}
           >
-            <Text style={styles.editLinkText}>Edit profile</Text>
+            <Text style={styles.editLinkText}>My Profile</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
