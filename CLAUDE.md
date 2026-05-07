@@ -36,10 +36,21 @@ Each option includes the response text and a brief delivery note.
 ### Context Quality Principle
 The more context the user provides, the better and more personalized the output. The app should actively encourage users to provide rich situational context — who they're talking to, what the relationship is, what the vibe is, what they want to achieve. **Thin context produces generic responses. Rich context produces responses that feel like they were written specifically for that moment.** This principle should inform UX copy, input placeholders, and onboarding guidance throughout the app.
 
-## Upcoming Changes (not yet implemented)
+## Current Status (as of 2026-05-07)
+Voice mode is built and committed (`7de4783`). Full backend + frontend complete. Pending before voice can be tested on device:
+- Install `openai` in backend container: `sudo docker compose exec backend pip install openai`
+- Native frontend rebuild required for `expo-av`: `npx expo run:android` or `npx expo run:ios`
+
+## Upcoming — Phase 1: Analytics & Feedback System
+Planned for next session. Models to add to a new `analytics` app (or extend `humor`):
+- `AIResponseRecord` — logs every AI response (user, mode, request fields, response JSON, timestamp)
+- `ResponseFeedback` — user thumbs up/down on individual options (linked to `AIResponseRecord` + option index)
+- `SavedResponse` — user explicitly saves a specific option text for later reference
+
+Frontend: thumbs up/down feedback buttons on each OptionCard and the voice mode card. Saved responses accessible from HomeScreen.
+
+## Upcoming — Other
 - Existing profiles with `persona_type` in `roaster`, `quick_wit`, `deadpan` hold stale values — data cleanup needed before production
-- `openai` package needs to be installed in the backend container after deploy (`pip install openai` or image rebuild)
-- Native rebuild required for `expo-av` to work on device
 
 ## Stack
 | Layer | Technology |
