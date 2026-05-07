@@ -78,7 +78,7 @@ export default function TextingModeScreen({ navigation }: Props) {
         >
           <Text style={styles.title}>Texting Mode</Text>
 
-          <Text style={styles.label}>The conversation</Text>
+          <Text style={styles.label}>What's the context?</Text>
           <TextInput
             style={styles.textArea}
             placeholder="Paste the conversation here…"

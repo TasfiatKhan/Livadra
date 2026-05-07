@@ -14,11 +14,11 @@ class UserProfile(models.Model):
         ABSURD = 'absurd', 'Absurd'
 
     class PersonaType(models.TextChoices):
-        ROASTER = 'roaster', 'The Roaster'
         STORYTELLER = 'storyteller', 'The Storyteller'
-        QUICK_WIT = 'quick_wit', 'The Quick Wit'
         CHARMER = 'charmer', 'The Charmer'
-        DEADPAN = 'deadpan', 'The Deadpan'
+        OBSERVER = 'observer', 'The Observer'
+        WITTY = 'witty', 'The Witty One'
+        CONFIDENT = 'confident', 'The Confident One'
 
     class ConfidenceLevel(models.TextChoices):
         SHY = 'shy', 'Shy'

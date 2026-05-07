@@ -12,11 +12,11 @@ export const HUMOR_STYLES: ChoiceOption[] = [
 ];
 
 export const PERSONA_TYPES: ChoiceOption[] = [
-  { value: 'roaster', label: 'The Roaster' },
   { value: 'storyteller', label: 'The Storyteller' },
-  { value: 'quick_wit', label: 'The Quick Wit' },
   { value: 'charmer', label: 'The Charmer' },
-  { value: 'deadpan', label: 'The Deadpan' },
+  { value: 'observer', label: 'The Observer' },
+  { value: 'witty', label: 'The Witty One' },
+  { value: 'confident', label: 'The Confident One' },
 ];
 
 export const CONFIDENCE_LEVELS: ChoiceOption[] = [

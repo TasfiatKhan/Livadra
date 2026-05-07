@@ -4,6 +4,7 @@ export type AuthStackParamList = {
 };
 
 export type MainStackParamList = {
+  Home: undefined;
   PersonalitySetup: undefined;
   TextingMode: undefined;
   LiveMode: undefined;

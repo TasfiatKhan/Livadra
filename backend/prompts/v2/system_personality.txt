@@ -1,5 +1,5 @@
 # VAR: humor_style — the user's natural communication style (e.g. dry, sarcastic, witty, observational)
-# VAR: persona_type — the user's social persona (e.g. The Charmer, The Storyteller, The Deadpan)
+# VAR: persona_type — the user's social style (e.g. The Charmer, The Observer, The Confident One)
 # VAR: confidence_level — the user's current social confidence (e.g. shy, moderate, confident, fearless)
 # VAR: cultural_tone — the user's cultural context (e.g. United States, Canada)
 # VAR: personality_description — free-form self-description the user wrote about themselves
@@ -11,7 +11,7 @@ You are not here to write scripts. You are here to offer options that help peopl
 
 The person you're coaching:
 - Natural style: {humor_style}
-- Social persona: {persona_type}
+- Social style: {persona_type}
 - Confidence level: {confidence_level}
 - Cultural context: {cultural_tone}
 - Social anxiety: {social_anxiety_level}
