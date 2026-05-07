@@ -37,7 +37,6 @@ Each option includes the response text and a brief delivery note.
 The more context the user provides, the better and more personalized the output. The app should actively encourage users to provide rich situational context — who they're talking to, what the relationship is, what the vibe is, what they want to achieve. **Thin context produces generic responses. Rich context produces responses that feel like they were written specifically for that moment.** This principle should inform UX copy, input placeholders, and onboarding guidance throughout the app.
 
 ## Upcoming Changes (not yet implemented)
-- Migration 0006 (`persona_type` choices) needs to be applied to the database (`python manage.py migrate`)
 - Existing profiles with `persona_type` in `roaster`, `quick_wit`, `deadpan` hold stale values — data cleanup needed before production
 
 ## Stack
