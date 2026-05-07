@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { useAIResponse } from '../../hooks/useAIResponse';
@@ -33,7 +34,15 @@ const OPTION_COLORS: Record<AIOption['type'], string> = {
 };
 
 function OptionCard({ option }: { option: AIOption }) {
+  const [copied, setCopied] = useState(false);
   const color = OPTION_COLORS[option.type];
+
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(option.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
     <View style={styles.optionCard}>
       <View style={[styles.optionPill, { backgroundColor: color }]}>
@@ -41,6 +50,11 @@ function OptionCard({ option }: { option: AIOption }) {
       </View>
       <Text style={styles.optionText}>{option.text}</Text>
       <Text style={styles.optionNote}>{option.note}</Text>
+      <TouchableOpacity style={styles.copyButton} onPress={handleCopy}>
+        <Text style={[styles.copyButtonText, copied && styles.copyButtonTextCopied]}>
+          {copied ? 'Copied!' : 'Copy'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -81,7 +95,7 @@ export default function LiveModeScreen({ navigation }: Props) {
           <Text style={styles.label}>What's the situation?</Text>
           <TextInput
             style={styles.textArea}
-            placeholder="Describe what's happening right now…"
+            placeholder="e.g. House party, we've been talking for 10 mins, she just laughed at something I said and touched my arm"
             value={situation}
             onChangeText={setSituation}
             multiline
@@ -93,7 +107,7 @@ export default function LiveModeScreen({ navigation }: Props) {
           <Text style={styles.label}>What do you need?</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. Make them laugh"
+            placeholder="e.g. I want to make her laugh and keep the momentum going"
             value={userRequest}
             onChangeText={setUserRequest}
             editable={!isLoading}
@@ -136,7 +150,7 @@ export default function LiveModeScreen({ navigation }: Props) {
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="Describe the vibe… busy bar, late night texting, office lunch break"
+            placeholder="e.g. Late night, conversation's been flirty, she takes a while to reply"
             value={environment}
             onChangeText={setEnvironment}
             editable={!isLoading}
@@ -301,6 +315,19 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: '#888',
     fontStyle: 'italic',
+  },
+  copyButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  copyButtonText: {
+    fontSize: 13,
+    color: '#aaa',
+  },
+  copyButtonTextCopied: {
+    color: '#22a06b',
+    fontWeight: '600',
   },
   deliveryCard: {
     padding: 16,

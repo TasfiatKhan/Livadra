@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
+  ActivityIndicator,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -8,10 +9,29 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../navigation/types';
+import { useProfile } from '../hooks/useProfile';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
+  const { profile, isLoading } = useProfile();
+
+  useEffect(() => {
+    if (!isLoading && profile && !profile.is_onboarding_complete) {
+      navigation.replace('PersonalitySetup');
+    }
+  }, [profile, isLoading]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -53,6 +73,7 @@ export default function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: {
     flex: 1,
     paddingHorizontal: 24,
