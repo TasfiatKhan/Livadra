@@ -6,5 +6,6 @@ psycopg2-binary
 redis
 django-redis
 anthropic
+openai
 python-decouple
 gunicorn

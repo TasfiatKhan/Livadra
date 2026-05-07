@@ -121,3 +121,4 @@ SIMPLE_JWT = {
 }
 
 PROFILE_CACHE_TTL = config('PROFILE_CACHE_TTL', default=3600, cast=int)
+OPENAI_API_KEY = config('OPENAI_API_KEY')

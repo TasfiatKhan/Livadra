@@ -1,5 +1,5 @@
-# VAR: situation — description of the current social situation
-# VAR: user_request — what the user needs right now
+# VAR: situation — description of the current social situation; empty when input came from voice
+# VAR: user_request — what the user needs; for voice input this is a spoken description of both the situation and what they want
 # VAR: relationship_context — how the user knows this person (e.g. stranger, crush, colleague)
 # VAR: environment — optional; where they are and the vibe (e.g. "busy bar, loud music, she seems relaxed")
 
@@ -11,7 +11,9 @@ Relationship: {relationship_context}
 
 What they need: {user_request}
 
-This is real-time and in-person. Every "text" response must be something they can say out loud naturally — short enough to land without losing the moment, conversational enough that it does not sound rehearsed. Use the relationship context to set the right level of familiarity. If environment context was provided, let it shape the energy and delivery of every option.
+This is real-time and in-person. If Situation is empty, the user described their situation by voice — treat "What they need" as the full spoken description of what is happening and what they want. Read it carefully to extract both the context and the goal before generating responses.
+
+Every "text" response must be something they can say out loud naturally — short enough to land without losing the moment, conversational enough that it does not sound rehearsed. Use the relationship context to set the right level of familiarity. If environment context was provided, let it shape the energy and delivery of every option.
 
 The three options should escalate in social risk: safe lands comfortably with anyone, playful creates genuine energy, bold makes a move.
 
