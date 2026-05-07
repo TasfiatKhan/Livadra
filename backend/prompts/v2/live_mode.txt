@@ -1,11 +1,18 @@
 # VAR: situation — description of the current social situation
 # VAR: user_request — what the user needs right now
+# VAR: relationship_context — how the user knows this person (e.g. stranger, crush, colleague)
+# VAR: environment — optional; where they are and the vibe (e.g. "busy bar, loud music, she seems relaxed")
 
 Situation:
 {situation}
 
+Relationship: {relationship_context}
+{environment}
+
 What they need: {user_request}
 
-This is real-time and in-person. Every "text" response must be something they can say out loud naturally — short enough to land without losing the moment, conversational enough that it does not sound rehearsed. The three options should escalate in social risk: safe lands comfortably with anyone, playful creates genuine energy, bold makes a move.
+This is real-time and in-person. Every "text" response must be something they can say out loud naturally — short enough to land without losing the moment, conversational enough that it does not sound rehearsed. Use the relationship context to set the right level of familiarity. If environment context was provided, let it shape the energy and delivery of every option.
 
-For the delivery field: focus on in-person factors — timing within the conversation, body language, eye contact, how to hold space after saying it.
+The three options should escalate in social risk: safe lands comfortably with anyone, playful creates genuine energy, bold makes a move.
+
+For the delivery field: focus on in-person factors — timing within the conversation, body language, eye contact, how to hold space after saying it. Frame it as a friend's observation, not a set of instructions.

@@ -10,7 +10,8 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email',
             'humor_style', 'persona_type', 'confidence_level', 'cultural_tone',
-            'personality_description', 'is_onboarding_complete', 'created_at', 'updated_at',
+            'personality_description', 'social_anxiety_level',
+            'is_onboarding_complete', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'email', 'is_onboarding_complete', 'created_at', 'updated_at']
 
@@ -18,7 +19,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['humor_style', 'persona_type', 'confidence_level', 'cultural_tone', 'personality_description']
+        fields = [
+            'humor_style', 'persona_type', 'confidence_level', 'cultural_tone',
+            'personality_description', 'social_anxiety_level',
+        ]
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():

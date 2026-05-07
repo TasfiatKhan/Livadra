@@ -25,6 +25,9 @@ class TextingModeView(APIView):
             user_id=request.user.id,
             context=serializer.validated_data['context'],
             user_request=serializer.validated_data['user_request'],
+            relationship_context=serializer.validated_data['relationship_context'],
+            relationship_other=serializer.validated_data['relationship_other'],
+            environment=serializer.validated_data['environment'],
         )
         return Response(data)
 
@@ -47,5 +50,8 @@ class LiveModeView(APIView):
             user_id=request.user.id,
             situation=serializer.validated_data['situation'],
             user_request=serializer.validated_data['user_request'],
+            relationship_context=serializer.validated_data['relationship_context'],
+            relationship_other=serializer.validated_data['relationship_other'],
+            environment=serializer.validated_data['environment'],
         )
         return Response(data)

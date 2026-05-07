@@ -44,23 +44,54 @@ class AIService:
             .replace('{confidence_level}', profile.get('confidence_level', ''))
             .replace('{cultural_tone}', profile.get('cultural_tone', ''))
             .replace('{personality_description}', profile.get('personality_description', ''))
+            .replace('{social_anxiety_level}', profile.get('social_anxiety_level', 'mild'))
         )
 
-    def get_texting_response(self, user_id: int, context: str, user_request: str) -> dict:
+    @staticmethod
+    def _resolve_relationship(relationship_context: str, relationship_other: str) -> str:
+        if relationship_context == 'other' and relationship_other.strip():
+            return relationship_other.strip()
+        return relationship_context
+
+    def get_texting_response(
+        self,
+        user_id: int,
+        context: str,
+        user_request: str,
+        relationship_context: str,
+        relationship_other: str,
+        environment: str,
+    ) -> dict:
         profile = self._get_profile(user_id)
         system_prompt = self._build_system_prompt(profile)
+        relationship = self._resolve_relationship(relationship_context, relationship_other)
+        environment_line = f"Environment: {environment}" if environment.strip() else ""
         user_message = self._texting_template.format(
             context=context,
             user_request=user_request,
+            relationship_context=relationship,
+            environment=environment_line,
         )
         return self._call(system_prompt, user_message, self._MAX_TOKENS['texting'])
 
-    def get_live_response(self, user_id: int, situation: str, user_request: str) -> dict:
+    def get_live_response(
+        self,
+        user_id: int,
+        situation: str,
+        user_request: str,
+        relationship_context: str,
+        relationship_other: str,
+        environment: str,
+    ) -> dict:
         profile = self._get_profile(user_id)
         system_prompt = self._build_system_prompt(profile)
+        relationship = self._resolve_relationship(relationship_context, relationship_other)
+        environment_line = f"Environment: {environment}" if environment.strip() else ""
         user_message = self._live_template.format(
             situation=situation,
             user_request=user_request,
+            relationship_context=relationship,
+            environment=environment_line,
         )
         return self._call(system_prompt, user_message, self._MAX_TOKENS['live'])
 

@@ -1,11 +1,18 @@
 # VAR: context — the conversation thread or message the user needs help with
 # VAR: user_request — what the user wants to achieve
+# VAR: relationship_context — how the user knows this person (e.g. stranger, crush, colleague)
+# VAR: environment — optional; where they are and the vibe (e.g. "texting late at night, conversation has been flirty")
 
 Conversation:
 {context}
 
+Relationship: {relationship_context}
+{environment}
+
 What they want: {user_request}
 
-Read this conversation closely. Understand the dynamic — who has the energy, what tone the other person is bringing, what has been left open. Write responses that feel like a natural next move in this specific thread, not generic options that could fit any conversation.
+Read this conversation closely. Understand the dynamic — who has the energy, what tone the other person is bringing, what has been left open. Use the relationship context to calibrate how much familiarity and risk feels appropriate. If environment context was provided, let it shape the tone and timing of what you suggest.
 
-For the delivery field: give texting-specific guidance — when to send it, how much length feels right, what to do if the other person responds a certain way.
+Write responses that feel like a natural next move in this specific thread, not generic options that could fit any conversation.
+
+For the delivery field: give texting-specific guidance — when to send it, how much length feels right, what to do if the other person responds a certain way. Speak like a perceptive friend reading the situation, not like a coach issuing instructions.

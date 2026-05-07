@@ -31,6 +31,12 @@ class UserProfile(models.Model):
         USA = 'usa', 'United States'
         CANADA = 'canada', 'Canada'
 
+    class SocialAnxietyLevel(models.TextChoices):
+        NONE = 'none', 'None'
+        MILD = 'mild', 'Mild'
+        MODERATE = 'moderate', 'Moderate'
+        HIGH = 'high', 'High'
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -42,6 +48,9 @@ class UserProfile(models.Model):
     cultural_tone = models.CharField(max_length=30, choices=CulturalTone.choices, blank=True, default='')
     username = models.CharField(max_length=50, blank=True, default='')
     personality_description = models.TextField(max_length=1000, blank=True, default='')
+    social_anxiety_level = models.CharField(
+        max_length=20, choices=SocialAnxietyLevel.choices, default=SocialAnxietyLevel.MILD,
+    )
     is_onboarding_complete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
