@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "HumorAI",
-    "slug": "humorai",
+    "name": "Witly",
+    "slug": "witly",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -16,7 +16,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "package": "com.humorai.app"
+      "package": "com.witly.app",
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "plugins": [
       "expo-secure-store"

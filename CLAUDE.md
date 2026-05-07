@@ -1,4 +1,4 @@
-# HumorAI — CLAUDE.md
+# Witly — CLAUDE.md
 
 Session continuity document. Update after every significant implementation step.
 
@@ -37,9 +37,15 @@ Each option includes the response text and a brief delivery note.
 The more context the user provides, the better and more personalized the output. The app should actively encourage users to provide rich situational context — who they're talking to, what the relationship is, what the vibe is, what they want to achieve. **Thin context produces generic responses. Rich context produces responses that feel like they were written specifically for that moment.** This principle should inform UX copy, input placeholders, and onboarding guidance throughout the app.
 
 ## Current Status (as of 2026-05-07)
-Voice mode is built and committed (`7de4783`). Full backend + frontend complete. Pending before voice can be tested on device:
-- Install `openai` in backend container: `sudo docker compose exec backend pip install openai`
-- Native frontend rebuild required for `expo-av`: `npx expo run:android` or `npx expo run:ios`
+Full stack complete and voice mode tested on device. All features working end-to-end.
+
+Voice mode fixes applied this session:
+- Whisper file format: `audio_file` passed as `(name, bytes, content_type)` tuple (OpenAI client requires `io.IOBase` or file tuple, not Django `InMemoryUploadedFile`)
+- Whisper error logging: `except Exception as e: print(...)` to surface transcription errors in container logs
+- Recording cleanup: unload any existing `Audio.Recording` before creating new one (prevents "Only one Recording object" error on re-record)
+- `Audio.setAudioModeAsync({ allowsRecordingIOS: false })` in `stopRecording` finally block to release audio session
+- Microphone permission: `RECORD_AUDIO` uses-permission added to `AndroidManifest.xml`
+- App renamed to Witly: `app.json` (name/slug/package), `package.json`, `strings.xml`, HomeScreen title/tagline, SecureStore keys (`witly.*`)
 
 ## Upcoming — Phase 1: Analytics & Feedback System
 Planned for next session. Models to add to a new `analytics` app (or extend `humor`):

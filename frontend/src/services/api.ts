@@ -2,8 +2,8 @@ import axios, { AxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { BASE_URL } from '../constants/api';
 
-const ACCESS_KEY = 'humorai.access_token';
-const REFRESH_KEY = 'humorai.refresh_token';
+const ACCESS_KEY = 'witly.access_token';
+const REFRESH_KEY = 'witly.refresh_token';
 
 export const getAccessToken = (): Promise<string | null> =>
   SecureStore.getItemAsync(ACCESS_KEY);

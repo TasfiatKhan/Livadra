@@ -66,7 +66,9 @@ class LiveVoiceView(APIView):
 
     def post(self, request):
         serializer = LiveVoiceRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            print("LiveVoiceView validation errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         profile = getattr(request.user, 'profile', None)
         if not profile or not profile.is_onboarding_complete:
@@ -80,9 +82,10 @@ class LiveVoiceView(APIView):
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
             transcription = client.audio.transcriptions.create(
                 model='whisper-1',
-                file=audio_file,
+                file=(audio_file.name, audio_file.read(), audio_file.content_type),
             )
-        except Exception:
+        except Exception as e:
+            print("Whisper transcription error:", str(e))
             return Response(
                 {'detail': 'Audio transcription failed. Please try again.'},
                 status=status.HTTP_400_BAD_REQUEST,

@@ -59,6 +59,10 @@ export default function LiveModeScreen({ navigation }: Props) {
     if (relationshipContext === '') return;
     setError('');
     try {
+      if (recording) {
+        await recording.stopAndUnloadAsync().catch(() => {});
+        setRecording(null);
+      }
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
         setError('Microphone permission is required.');
@@ -82,8 +86,9 @@ export default function LiveModeScreen({ navigation }: Props) {
         ]),
       );
       pulseLoop.current.start();
-    } catch {
-      setError('Could not start recording. Please try again.');
+    } catch (e: any) {
+      console.error('Recording error:', e);
+      setError('Could not start recording: ' + (e?.message ?? 'unknown error'));
     }
   };
 
@@ -121,6 +126,7 @@ export default function LiveModeScreen({ navigation }: Props) {
       const errData = e?.response?.data;
       setError(errData?.detail ?? 'Something went wrong. Please try again.');
     } finally {
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
       setRecordingState('idle');
     }
   };

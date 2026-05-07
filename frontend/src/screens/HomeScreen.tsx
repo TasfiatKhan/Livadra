@@ -36,7 +36,7 @@ export default function HomeScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.appName}>AI Wingman</Text>
+          <Text style={styles.appName}>Witly</Text>
           <Text style={styles.tagline}>Your social confidence coach</Text>
         </View>
 
