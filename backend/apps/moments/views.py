@@ -1,0 +1,174 @@
+import json
+
+import openai
+from django.conf import settings
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+
+from services.ai_service import ai_service
+from .models import Moment, MomentMessage
+from .serializers import (
+    MomentSerializer, MomentDetailSerializer,
+    MomentCreateSerializer, MomentContinueSerializer,
+)
+
+MESSAGE_CAP = 38  # 19 pairs
+
+
+def _resolve_rel(ctx, other):
+    if ctx == 'other' and other.strip():
+        return other.strip()
+    return ctx
+
+
+class MomentListCreateView(APIView):
+    parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        moments = Moment.objects.filter(user=request.user, is_archived=False)
+        return Response(MomentSerializer(moments, many=True).data)
+
+    def post(self, request):
+        serializer = MomentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        vd = serializer.validated_data
+
+        profile = getattr(request.user, 'profile', None)
+        if not profile or not profile.is_onboarding_complete:
+            return Response(
+                {'detail': 'Please complete your profile before using this feature.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Resolve initial input — text or audio transcription
+        audio_file = vd.get('audio')
+        if audio_file:
+            try:
+                client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+                transcription = client.audio.transcriptions.create(
+                    model='whisper-1',
+                    file=(audio_file.name, audio_file.read(), audio_file.content_type),
+                )
+                initial_input_text = transcription.text
+            except Exception as e:
+                print("Whisper transcription error (moments):", str(e))
+                return Response(
+                    {'detail': 'Audio transcription failed. Please try again.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            initial_input_text = vd['initial_input'].strip()
+
+        relationship = _resolve_rel(vd['relationship_context'], vd['relationship_other'])
+        moment = Moment.objects.create(
+            user=request.user,
+            title=initial_input_text[:80].strip(),
+            relationship_context=relationship,
+            mode=vd['mode'],
+        )
+        MomentMessage.objects.create(
+            moment=moment,
+            role=MomentMessage.Role.USER,
+            content=initial_input_text,
+        )
+
+        data = ai_service.get_response_with_history(
+            user_id=request.user.id,
+            relationship_context=relationship,
+            relationship_other='',
+            environment=vd['environment'],
+            history=[],
+            new_input=initial_input_text,
+        )
+        MomentMessage.objects.create(
+            moment=moment,
+            role=MomentMessage.Role.ASSISTANT,
+            content=json.dumps(data),
+        )
+
+        return Response({'moment_id': moment.id, **data}, status=status.HTTP_201_CREATED)
+
+
+class MomentDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            moment = Moment.objects.prefetch_related('messages').get(id=pk, user=request.user)
+        except Moment.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(MomentDetailSerializer(moment).data)
+
+
+class MomentContinueView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            moment = Moment.objects.get(id=pk, user=request.user)
+        except Moment.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if moment.is_archived:
+            return Response(
+                {'detail': 'This moment has ended. Start a new one.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        profile = getattr(request.user, 'profile', None)
+        if not profile or not profile.is_onboarding_complete:
+            return Response(
+                {'detail': 'Please complete your profile before using this feature.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = MomentContinueSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        vd = serializer.validated_data
+
+        # Capture history before adding the new user message
+        history = list(moment.messages.order_by('created_at').values('role', 'content'))
+
+        MomentMessage.objects.create(
+            moment=moment,
+            role=MomentMessage.Role.USER,
+            content=vd['new_input'],
+        )
+
+        data = ai_service.get_response_with_history(
+            user_id=request.user.id,
+            relationship_context=moment.relationship_context,
+            relationship_other='',
+            environment=vd['environment'],
+            history=history,
+            new_input=vd['new_input'],
+        )
+        MomentMessage.objects.create(
+            moment=moment,
+            role=MomentMessage.Role.ASSISTANT,
+            content=json.dumps(data),
+        )
+
+        if moment.messages.count() >= MESSAGE_CAP:
+            moment.is_archived = True
+
+        moment.save()  # updates last_active_at via auto_now=True
+
+        return Response({**data, 'is_archived': moment.is_archived})
+
+
+class MomentArchiveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            moment = Moment.objects.get(id=pk, user=request.user)
+        except Moment.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        moment.is_archived = True
+        moment.save(update_fields=['is_archived'])
+        return Response({'status': 'archived'})

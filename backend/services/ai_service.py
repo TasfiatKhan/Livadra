@@ -13,6 +13,7 @@ class AIService:
     _MAX_TOKENS = {
         'texting': 600,
         'live': 1024,
+        'moments': 1024,
     }
 
     def __init__(self):
@@ -20,6 +21,7 @@ class AIService:
         self._personality_template = self._load_template('system_personality.txt')
         self._texting_template = self._load_template('texting_mode.txt')
         self._live_template = self._load_template('live_mode.txt')
+        self._moments_template = self._load_template('moments_mode.txt')
 
     @staticmethod
     def _load_template(filename: str) -> str:
@@ -52,6 +54,26 @@ class AIService:
         if relationship_context == 'other' and relationship_other.strip():
             return relationship_other.strip()
         return relationship_context
+
+    def _call_with_messages(self, system_prompt: str, messages: list, max_tokens: int) -> dict:
+        message = self._client.messages.create(
+            model=self.MODEL,
+            max_tokens=max_tokens,
+            system=system_prompt,
+            messages=messages,
+        )
+        text = message.content[0].text.strip()
+        if text.startswith('```'):
+            lines = text.splitlines()
+            text = '\n'.join(lines[1:-1]).strip()
+        return json.loads(text)
+
+    def _call(self, system_prompt: str, user_message: str, max_tokens: int) -> dict:
+        return self._call_with_messages(
+            system_prompt,
+            [{'role': 'user', 'content': user_message}],
+            max_tokens,
+        )
 
     def get_texting_response(
         self,
@@ -95,18 +117,33 @@ class AIService:
         )
         return self._call(system_prompt, user_message, self._MAX_TOKENS['live'])
 
-    def _call(self, system_prompt: str, user_message: str, max_tokens: int) -> dict:
-        message = self._client.messages.create(
-            model=self.MODEL,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=[{'role': 'user', 'content': user_message}],
+    def get_response_with_history(
+        self,
+        user_id: int,
+        relationship_context: str,
+        relationship_other: str,
+        environment: str,
+        history: list,
+        new_input: str,
+    ) -> dict:
+        profile = self._get_profile(user_id)
+        system_prompt = self._build_system_prompt(profile)
+        relationship = self._resolve_relationship(relationship_context, relationship_other)
+        environment_line = f"Environment: {environment}" if environment.strip() else ""
+
+        new_user_message = (
+            self._moments_template
+            .replace('{relationship_context}', relationship)
+            .replace('{environment}', environment_line)
+            .replace('{new_input}', new_input)
         )
-        text = message.content[0].text.strip()
-        if text.startswith('```'):
-            lines = text.splitlines()
-            text = '\n'.join(lines[1:-1]).strip()
-        return json.loads(text)
+
+        # Cap at last 36 messages (18 pairs) to stay within token budget
+        capped = history[-36:]
+        messages = [{'role': m['role'], 'content': m['content']} for m in capped]
+        messages.append({'role': 'user', 'content': new_user_message})
+
+        return self._call_with_messages(system_prompt, messages, self._MAX_TOKENS['moments'])
 
 
 ai_service = AIService()

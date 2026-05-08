@@ -1,0 +1,11 @@
+# VAR: {relationship_context} — resolved relationship string
+# VAR: {environment} — optional environment context line (empty string if not provided)
+# VAR: {new_input} — the user's current update or initial situation description
+
+Relationship: {relationship_context}
+{environment}
+
+Ongoing situation — use the conversation history above for full context. If there is no prior history, this is the opening message.
+
+Current update:
+{new_input}

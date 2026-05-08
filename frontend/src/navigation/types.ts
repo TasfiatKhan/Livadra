@@ -8,4 +8,6 @@ export type MainStackParamList = {
   PersonalitySetup: undefined;
   TextingMode: undefined;
   LiveMode: undefined;
+  Moments: undefined;
+  MomentDetail: { momentId: number | null };
 };

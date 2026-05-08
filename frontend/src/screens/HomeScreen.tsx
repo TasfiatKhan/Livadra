@@ -58,6 +58,15 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.cardTitle}>Live Mode</Text>
             <Text style={styles.cardSubtitle}>Help me in a live situation</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('Moments')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.cardTitle}>Moments</Text>
+            <Text style={styles.cardSubtitle}>Track an ongoing situation</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity

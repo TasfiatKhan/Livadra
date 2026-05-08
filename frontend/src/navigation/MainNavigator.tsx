@@ -5,6 +5,8 @@ import HomeScreen from '../screens/HomeScreen';
 import PersonalitySetupScreen from '../screens/onboarding/PersonalitySetupScreen';
 import TextingModeScreen from '../screens/texting/TextingModeScreen';
 import LiveModeScreen from '../screens/live/LiveModeScreen';
+import MomentsScreen from '../screens/moments/MomentsScreen';
+import MomentDetailScreen from '../screens/moments/MomentDetailScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -15,6 +17,8 @@ export default function MainNavigator() {
       <Stack.Screen name="PersonalitySetup" component={PersonalitySetupScreen} />
       <Stack.Screen name="TextingMode" component={TextingModeScreen} />
       <Stack.Screen name="LiveMode" component={LiveModeScreen} />
+      <Stack.Screen name="Moments" component={MomentsScreen} />
+      <Stack.Screen name="MomentDetail" component={MomentDetailScreen} />
     </Stack.Navigator>
   );
 }
