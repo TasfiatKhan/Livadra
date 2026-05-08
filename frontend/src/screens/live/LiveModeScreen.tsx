@@ -19,6 +19,7 @@ import { MainStackParamList } from '../../navigation/types';
 import { AIOption, AIResponse } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 import { LIVE_VOICE_PATH } from '../../services/humorService';
+import { submitFeedback, saveResponse } from '../../services/responsesService';
 import api from '../../services/api';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'LiveMode'>;
@@ -36,6 +37,13 @@ const OPTION_COLORS: Record<AIOption['type'], string> = {
   bold: '#c0392b',
 };
 
+const FEEDBACK_BUTTONS = [
+  { type: 'natural', label: '👍 Natural' },
+  { type: 'loved', label: '🔥 Loved It' },
+  { type: 'cringe', label: '😬 Cringe' },
+  { type: 'risky', label: '⚠️ Too Risky' },
+] as const;
+
 export default function LiveModeScreen({ navigation }: Props) {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -47,6 +55,8 @@ export default function LiveModeScreen({ navigation }: Props) {
   const [relationshipContext, setRelationshipContext] = useState('');
   const [relationshipOther, setRelationshipOther] = useState('');
   const [environment, setEnvironment] = useState('');
+  const [feedbackGiven, setFeedbackGiven] = useState<Set<string>>(new Set());
+  const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
@@ -54,6 +64,11 @@ export default function LiveModeScreen({ navigation }: Props) {
   useEffect(() => {
     setCopied(false);
   }, [currentIndex]);
+
+  useEffect(() => {
+    setFeedbackGiven(new Set());
+    setSavedOptions(new Set());
+  }, [response]);
 
   const startRecording = async () => {
     if (relationshipContext === '') return;
@@ -136,6 +151,20 @@ export default function LiveModeScreen({ navigation }: Props) {
     await Clipboard.setStringAsync(response.options[currentIndex].text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleFeedback = async (type: string) => {
+    if (!response?.record_id || feedbackGiven.has(type)) return;
+    setFeedbackGiven(prev => new Set(prev).add(type));
+    try { await submitFeedback(response.record_id, type); } catch {}
+  };
+
+  const handleSave = async () => {
+    if (!response?.record_id) return;
+    const option = response.options[currentIndex];
+    if (savedOptions.has(option.type)) return;
+    setSavedOptions(prev => new Set(prev).add(option.type));
+    try { await saveResponse(response.record_id, option.type, option.text); } catch {}
   };
 
   const canRecord = relationshipContext !== '';
@@ -242,6 +271,41 @@ export default function LiveModeScreen({ navigation }: Props) {
                     {copied ? 'Copied!' : 'Copy'}
                   </Text>
                 </TouchableOpacity>
+
+                {response.record_id != null && (
+                  <View style={styles.feedbackRow}>
+                    {FEEDBACK_BUTTONS.map(({ type, label }) => {
+                      const active = feedbackGiven.has(type);
+                      return (
+                        <TouchableOpacity
+                          key={type}
+                          style={[styles.feedbackBtn, active && styles.feedbackBtnActive]}
+                          onPress={() => handleFeedback(type)}
+                          disabled={active}
+                        >
+                          <Text style={[styles.feedbackBtnText, active && styles.feedbackBtnTextActive]}>
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    <TouchableOpacity
+                      style={[
+                        styles.feedbackBtn,
+                        savedOptions.has(currentOption.type) && styles.feedbackBtnSaved,
+                      ]}
+                      onPress={handleSave}
+                      disabled={savedOptions.has(currentOption.type)}
+                    >
+                      <Text style={[
+                        styles.feedbackBtnText,
+                        savedOptions.has(currentOption.type) && styles.feedbackBtnTextActive,
+                      ]}>
+                        {savedOptions.has(currentOption.type) ? '💾 Saved' : '💾 Save'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
 
               <View style={styles.navRow}>
@@ -441,6 +505,32 @@ const styles = StyleSheet.create({
   },
   copyButtonTextCopied: {
     color: '#22a06b',
+    fontWeight: '600',
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  feedbackBtn: {
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#efefef',
+  },
+  feedbackBtnActive: {
+    backgroundColor: '#111',
+  },
+  feedbackBtnSaved: {
+    backgroundColor: '#22a06b',
+  },
+  feedbackBtnText: {
+    fontSize: 12,
+    color: '#555',
+  },
+  feedbackBtnTextActive: {
+    color: '#fff',
     fontWeight: '600',
   },
   navRow: {

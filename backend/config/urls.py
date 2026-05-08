@@ -12,4 +12,5 @@ urlpatterns = [
     path('api/users/', include('apps.users.urls')),
     path('api/profiles/', include('apps.profiles.urls')),
     path('api/humor/', include('apps.humor.urls')),
+    path('api/responses/', include('apps.responses.urls')),
 ]

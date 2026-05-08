@@ -6,8 +6,24 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 
+from apps.responses.models import AIResponseRecord
 from services.ai_service import ai_service
 from .serializers import TextingRequestSerializer, LiveRequestSerializer, LiveVoiceRequestSerializer
+
+
+def _record_response(user, mode, relationship_context, situation_summary, data):
+    try:
+        record = AIResponseRecord.objects.create(
+            user=user,
+            mode=mode,
+            relationship_context=relationship_context,
+            situation_summary=situation_summary[:200],
+            response_json=data,
+        )
+        return record.id
+    except Exception as e:
+        print(f'AIResponseRecord save failed ({mode}):', str(e))
+        return None
 
 
 class TextingModeView(APIView):
@@ -24,15 +40,23 @@ class TextingModeView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        vd = serializer.validated_data
         data = ai_service.get_texting_response(
             user_id=request.user.id,
-            context=serializer.validated_data['context'],
-            user_request=serializer.validated_data['user_request'],
-            relationship_context=serializer.validated_data['relationship_context'],
-            relationship_other=serializer.validated_data['relationship_other'],
-            environment=serializer.validated_data['environment'],
+            context=vd['context'],
+            user_request=vd['user_request'],
+            relationship_context=vd['relationship_context'],
+            relationship_other=vd['relationship_other'],
+            environment=vd['environment'],
         )
-        return Response(data)
+        record_id = _record_response(
+            user=request.user,
+            mode=AIResponseRecord.Mode.TEXTING,
+            relationship_context=vd['relationship_context'],
+            situation_summary=vd['user_request'],
+            data=data,
+        )
+        return Response({**data, 'record_id': record_id})
 
 
 class LiveModeView(APIView):
@@ -49,15 +73,24 @@ class LiveModeView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        vd = serializer.validated_data
         data = ai_service.get_live_response(
             user_id=request.user.id,
-            situation=serializer.validated_data['situation'],
-            user_request=serializer.validated_data['user_request'],
-            relationship_context=serializer.validated_data['relationship_context'],
-            relationship_other=serializer.validated_data['relationship_other'],
-            environment=serializer.validated_data['environment'],
+            situation=vd['situation'],
+            user_request=vd['user_request'],
+            relationship_context=vd['relationship_context'],
+            relationship_other=vd['relationship_other'],
+            environment=vd['environment'],
         )
-        return Response(data)
+        summary = (vd['situation'] + ' ' + vd['user_request']).strip()
+        record_id = _record_response(
+            user=request.user,
+            mode=AIResponseRecord.Mode.LIVE,
+            relationship_context=vd['relationship_context'],
+            situation_summary=summary,
+            data=data,
+        )
+        return Response({**data, 'record_id': record_id})
 
 
 class LiveVoiceView(APIView):
@@ -91,12 +124,20 @@ class LiveVoiceView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        vd = serializer.validated_data
         data = ai_service.get_live_response(
             user_id=request.user.id,
             situation='',
             user_request=transcription.text,
-            relationship_context=serializer.validated_data['relationship_context'],
-            relationship_other=serializer.validated_data['relationship_other'],
-            environment=serializer.validated_data['environment'],
+            relationship_context=vd['relationship_context'],
+            relationship_other=vd['relationship_other'],
+            environment=vd['environment'],
         )
-        return Response(data)
+        record_id = _record_response(
+            user=request.user,
+            mode=AIResponseRecord.Mode.LIVE_VOICE,
+            relationship_context=vd['relationship_context'],
+            situation_summary=transcription.text,
+            data=data,
+        )
+        return Response({**data, 'record_id': record_id})

@@ -19,4 +19,5 @@ export type AIOption = {
 export type AIResponse = {
   options: AIOption[];
   delivery: string;
+  record_id: number | null;
 };

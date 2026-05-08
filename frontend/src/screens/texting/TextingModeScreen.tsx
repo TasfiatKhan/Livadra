@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -16,6 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { useAIResponse } from '../../hooks/useAIResponse';
 import { TEXTING_PATH } from '../../services/humorService';
+import { submitFeedback, saveResponse } from '../../services/responsesService';
 import { AIOption } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 
@@ -33,7 +34,23 @@ const OPTION_COLORS: Record<AIOption['type'], string> = {
   bold: '#c0392b',
 };
 
-function OptionCard({ option }: { option: AIOption }) {
+const FEEDBACK_BUTTONS = [
+  { type: 'natural', label: '👍 Natural' },
+  { type: 'loved', label: '🔥 Loved It' },
+  { type: 'cringe', label: '😬 Cringe' },
+  { type: 'risky', label: '⚠️ Too Risky' },
+] as const;
+
+type OptionCardProps = {
+  option: AIOption;
+  recordId: number | null;
+  feedbackGiven: Set<string>;
+  isSaved: boolean;
+  onFeedback: (type: string) => void;
+  onSave: () => void;
+};
+
+function OptionCard({ option, recordId, feedbackGiven, isSaved, onFeedback, onSave }: OptionCardProps) {
   const [copied, setCopied] = useState(false);
   const color = OPTION_COLORS[option.type];
 
@@ -55,6 +72,35 @@ function OptionCard({ option }: { option: AIOption }) {
           {copied ? 'Copied!' : 'Copy'}
         </Text>
       </TouchableOpacity>
+
+      {recordId != null && (
+        <View style={styles.feedbackRow}>
+          {FEEDBACK_BUTTONS.map(({ type, label }) => {
+            const active = feedbackGiven.has(type);
+            return (
+              <TouchableOpacity
+                key={type}
+                style={[styles.feedbackBtn, active && styles.feedbackBtnActive]}
+                onPress={() => onFeedback(type)}
+                disabled={active}
+              >
+                <Text style={[styles.feedbackBtnText, active && styles.feedbackBtnTextActive]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          <TouchableOpacity
+            style={[styles.feedbackBtn, isSaved && styles.feedbackBtnSaved]}
+            onPress={onSave}
+            disabled={isSaved}
+          >
+            <Text style={[styles.feedbackBtnText, isSaved && styles.feedbackBtnTextActive]}>
+              {isSaved ? '💾 Saved' : '💾 Save'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -66,6 +112,13 @@ export default function TextingModeScreen({ navigation }: Props) {
   const [relationshipContext, setRelationshipContext] = useState('');
   const [relationshipOther, setRelationshipOther] = useState('');
   const [environment, setEnvironment] = useState('');
+  const [feedbackGiven, setFeedbackGiven] = useState<Set<string>>(new Set());
+  const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setFeedbackGiven(new Set());
+    setSavedOptions(new Set());
+  }, [response]);
 
   const handleSubmit = () => {
     reset();
@@ -76,6 +129,18 @@ export default function TextingModeScreen({ navigation }: Props) {
       relationship_other: relationshipOther,
       environment,
     });
+  };
+
+  const handleFeedback = async (type: string) => {
+    if (!response?.record_id || feedbackGiven.has(type)) return;
+    setFeedbackGiven(prev => new Set(prev).add(type));
+    try { await submitFeedback(response.record_id, type); } catch {}
+  };
+
+  const handleSave = async (optionType: string, optionText: string) => {
+    if (!response?.record_id || savedOptions.has(optionType)) return;
+    setSavedOptions(prev => new Set(prev).add(optionType));
+    try { await saveResponse(response.record_id, optionType, optionText); } catch {}
   };
 
   const canSubmit = relationshipContext !== '' && !isLoading;
@@ -173,7 +238,15 @@ export default function TextingModeScreen({ navigation }: Props) {
           {response && (
             <View style={styles.resultsContainer}>
               {response.options.map((option) => (
-                <OptionCard key={option.type} option={option} />
+                <OptionCard
+                  key={option.type}
+                  option={option}
+                  recordId={response.record_id}
+                  feedbackGiven={feedbackGiven}
+                  isSaved={savedOptions.has(option.type)}
+                  onFeedback={handleFeedback}
+                  onSave={() => handleSave(option.type, option.text)}
+                />
               ))}
               <View style={styles.deliveryCard}>
                 <Text style={styles.deliveryLabel}>Delivery</Text>
@@ -327,6 +400,32 @@ const styles = StyleSheet.create({
   },
   copyButtonTextCopied: {
     color: '#22a06b',
+    fontWeight: '600',
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  feedbackBtn: {
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#efefef',
+  },
+  feedbackBtnActive: {
+    backgroundColor: '#111',
+  },
+  feedbackBtnSaved: {
+    backgroundColor: '#22a06b',
+  },
+  feedbackBtnText: {
+    fontSize: 12,
+    color: '#555',
+  },
+  feedbackBtnTextActive: {
+    color: '#fff',
     fontWeight: '600',
   },
   deliveryCard: {
