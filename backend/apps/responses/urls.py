@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import FeedbackView, SavedResponseView
+from .views import FeedbackView, SavedResponseView, SavedResponseListView
 
 urlpatterns = [
     path('feedback/', FeedbackView.as_view(), name='feedback'),
     path('save/', SavedResponseView.as_view(), name='save-response'),
+    path('saved/', SavedResponseListView.as_view(), name='saved-responses'),
 ]

@@ -10,4 +10,5 @@ export type MainStackParamList = {
   LiveMode: undefined;
   Moments: undefined;
   MomentDetail: { momentId: number | null };
+  SavedResponses: undefined;
 };

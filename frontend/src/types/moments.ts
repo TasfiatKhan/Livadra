@@ -15,6 +15,7 @@ export type MomentMessage = {
   id: number;
   role: 'user' | 'assistant';
   content: string;
+  response_record_id: number | null;
   created_at: string;
 };
 
@@ -33,10 +34,12 @@ export type CreateMomentResponse = {
   moment_id: number;
   options: AIOption[];
   delivery: string;
+  record_id: number | null;
 };
 
 export type ContinueMomentResponse = {
   options: AIOption[];
   delivery: string;
   is_archived: boolean;
+  record_id: number | null;
 };

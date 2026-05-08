@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from .models import AIResponseRecord, ResponseFeedback, SavedResponse
-from .serializers import FeedbackSerializer, SavedResponseSerializer
+from .serializers import FeedbackSerializer, SavedResponseSerializer, SavedResponseListSerializer
 
 
 class FeedbackView(APIView):
@@ -20,16 +20,27 @@ class FeedbackView(APIView):
         except AIResponseRecord.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        _, created = ResponseFeedback.objects.get_or_create(
-            user=request.user,
-            response_record=record,
-            feedback_type=vd['feedback_type'],
-        )
-        if created:
-            record.feedback_counts[vd['feedback_type']] += 1
-            record.save(update_fields=['feedback_counts'])
+        new_type = vd['feedback_type']
+        existing = ResponseFeedback.objects.filter(user=request.user, response_record=record).first()
 
-        return Response({'status': 'ok'})
+        if existing is None:
+            ResponseFeedback.objects.create(user=request.user, response_record=record, feedback_type=new_type)
+            record.feedback_counts[new_type] = record.feedback_counts.get(new_type, 0) + 1
+            action = 'added'
+        elif existing.feedback_type == new_type:
+            existing.delete()
+            record.feedback_counts[new_type] = max(0, record.feedback_counts.get(new_type, 0) - 1)
+            action = 'removed'
+        else:
+            old_type = existing.feedback_type
+            existing.feedback_type = new_type
+            existing.save(update_fields=['feedback_type'])
+            record.feedback_counts[old_type] = max(0, record.feedback_counts.get(old_type, 0) - 1)
+            record.feedback_counts[new_type] = record.feedback_counts.get(new_type, 0) + 1
+            action = 'replaced'
+
+        record.save(update_fields=['feedback_counts'])
+        return Response({'status': 'ok', 'action': action})
 
 
 class SavedResponseView(APIView):
@@ -52,3 +63,11 @@ class SavedResponseView(APIView):
             option_text=vd['option_text'],
         )
         return Response({'status': 'ok'}, status=status.HTTP_201_CREATED)
+
+
+class SavedResponseListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        saved = SavedResponse.objects.filter(user=request.user).select_related('response_record')
+        return Response(SavedResponseListSerializer(saved, many=True).data)

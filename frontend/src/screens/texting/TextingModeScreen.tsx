@@ -44,7 +44,7 @@ const FEEDBACK_BUTTONS = [
 type OptionCardProps = {
   option: AIOption;
   recordId: number | null;
-  feedbackGiven: Set<string>;
+  feedbackGiven: string | null;
   isSaved: boolean;
   onFeedback: (type: string) => void;
   onSave: () => void;
@@ -76,13 +76,12 @@ function OptionCard({ option, recordId, feedbackGiven, isSaved, onFeedback, onSa
       {recordId != null && (
         <View style={styles.feedbackRow}>
           {FEEDBACK_BUTTONS.map(({ type, label }) => {
-            const active = feedbackGiven.has(type);
+            const active = feedbackGiven === type;
             return (
               <TouchableOpacity
                 key={type}
                 style={[styles.feedbackBtn, active && styles.feedbackBtnActive]}
                 onPress={() => onFeedback(type)}
-                disabled={active}
               >
                 <Text style={[styles.feedbackBtnText, active && styles.feedbackBtnTextActive]}>
                   {label}
@@ -112,11 +111,11 @@ export default function TextingModeScreen({ navigation }: Props) {
   const [relationshipContext, setRelationshipContext] = useState('');
   const [relationshipOther, setRelationshipOther] = useState('');
   const [environment, setEnvironment] = useState('');
-  const [feedbackGiven, setFeedbackGiven] = useState<Set<string>>(new Set());
+  const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    setFeedbackGiven(new Set());
+    setFeedbackGiven(null);
     setSavedOptions(new Set());
   }, [response]);
 
@@ -132,8 +131,8 @@ export default function TextingModeScreen({ navigation }: Props) {
   };
 
   const handleFeedback = async (type: string) => {
-    if (!response?.record_id || feedbackGiven.has(type)) return;
-    setFeedbackGiven(prev => new Set(prev).add(type));
+    if (!response?.record_id) return;
+    setFeedbackGiven(feedbackGiven === type ? null : type);
     try { await submitFeedback(response.record_id, type); } catch {}
   };
 

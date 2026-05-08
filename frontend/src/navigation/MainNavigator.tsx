@@ -7,6 +7,7 @@ import TextingModeScreen from '../screens/texting/TextingModeScreen';
 import LiveModeScreen from '../screens/live/LiveModeScreen';
 import MomentsScreen from '../screens/moments/MomentsScreen';
 import MomentDetailScreen from '../screens/moments/MomentDetailScreen';
+import SavedResponsesScreen from '../screens/SavedResponsesScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -19,6 +20,7 @@ export default function MainNavigator() {
       <Stack.Screen name="LiveMode" component={LiveModeScreen} />
       <Stack.Screen name="Moments" component={MomentsScreen} />
       <Stack.Screen name="MomentDetail" component={MomentDetailScreen} />
+      <Stack.Screen name="SavedResponses" component={SavedResponsesScreen} />
     </Stack.Navigator>
   );
 }

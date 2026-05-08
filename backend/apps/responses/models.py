@@ -11,6 +11,7 @@ class AIResponseRecord(models.Model):
         TEXTING = 'texting', 'Texting'
         LIVE = 'live', 'Live'
         LIVE_VOICE = 'live_voice', 'Live Voice'
+        MOMENTS = 'moments', 'Moments'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='response_records')
     mode = models.CharField(max_length=20, choices=Mode.choices)

@@ -116,7 +116,15 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>Set up your profile</Text>
+        <Text style={styles.title}>My Profile</Text>
+
+        <TouchableOpacity
+          style={styles.savedBanner}
+          onPress={() => navigation.navigate('SavedResponses')}
+        >
+          <Text style={styles.savedBannerText}>💾 Saved responses</Text>
+          <Text style={styles.savedBannerArrow}>›</Text>
+        </TouchableOpacity>
 
         <Text style={styles.sectionLabel}>Humor Style</Text>
         <ChipGroup
@@ -245,6 +253,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
   },
+  savedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f7f7f7',
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  savedBannerText: { fontSize: 15, fontWeight: '600', color: '#111' },
+  savedBannerArrow: { fontSize: 20, color: '#aaa' },
   button: {
     backgroundColor: '#000',
     borderRadius: 8,

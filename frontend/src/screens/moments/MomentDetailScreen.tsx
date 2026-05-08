@@ -16,6 +16,7 @@ import { Audio } from 'expo-av';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { createMoment, getMoment, continueMoment } from '../../services/momentsService';
+import { submitFeedback, saveResponse } from '../../services/responsesService';
 import { MomentDetail, MomentMessage } from '../../types/moments';
 import { AIOption, AIResponse } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
@@ -39,6 +40,13 @@ const OPTION_COLORS: Record<AIOption['type'], string> = {
   playful: '#e67e22',
   bold: '#c0392b',
 };
+
+const MOMENT_FEEDBACK_BUTTONS = [
+  { type: 'natural', label: '👍 Natural' },
+  { type: 'loved', label: '🔥 Loved It' },
+  { type: 'cringe', label: '😬 Cringe' },
+  { type: 'risky', label: '⚠️ Too Risky' },
+] as const;
 
 export default function MomentDetailScreen({ route, navigation }: Props) {
   const [localMomentId, setLocalMomentId] = useState<number | null>(route.params.momentId);
@@ -64,6 +72,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
   const [newInput, setNewInput] = useState('');
   const [isContinuing, setIsContinuing] = useState(false);
   const [cardIndices, setCardIndices] = useState<Record<number, number>>({});
+  const [msgFeedback, setMsgFeedback] = useState<Record<number, string | null>>({});
+  const [msgSaved, setMsgSaved] = useState<Record<number, Set<string>>>({});
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -186,8 +196,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
           is_archived: data.is_archived,
           messages: [
             ...prev.messages,
-            { id: Date.now(), role: 'user', content: input, created_at: new Date().toISOString() },
-            { id: Date.now() + 1, role: 'assistant', content: JSON.stringify({ options: data.options, delivery: data.delivery }), created_at: new Date().toISOString() },
+            { id: Date.now(), role: 'user', content: input, response_record_id: null, created_at: new Date().toISOString() },
+            { id: Date.now() + 1, role: 'assistant', content: JSON.stringify({ options: data.options, delivery: data.delivery }), response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
           ],
         };
       });
@@ -201,6 +211,19 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
 
   const setCardIndex = (msgIdx: number, idx: number) => {
     setCardIndices(prev => ({ ...prev, [msgIdx]: idx }));
+  };
+
+  const handleMsgFeedback = async (msgId: number, recordId: number, type: string) => {
+    const current = msgFeedback[msgId] ?? null;
+    setMsgFeedback(prev => ({ ...prev, [msgId]: current === type ? null : type }));
+    try { await submitFeedback(recordId, type); } catch {}
+  };
+
+  const handleMsgSave = async (msgId: number, recordId: number, optionType: string, optionText: string) => {
+    const saved = msgSaved[msgId] ?? new Set<string>();
+    if (saved.has(optionType)) return;
+    setMsgSaved(prev => ({ ...prev, [msgId]: new Set([...(prev[msgId] ?? []), optionType]) }));
+    try { await saveResponse(recordId, optionType, optionText); } catch {}
   };
 
   const canRecord = relContext !== '';
@@ -378,6 +401,10 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
             const opt = parsed.options[cIdx];
             if (!opt) return null;
 
+            const recordId = msg.response_record_id;
+            const currentFeedback = msgFeedback[msg.id] ?? null;
+            const savedForMsg = msgSaved[msg.id] ?? new Set<string>();
+
             return (
               <View key={msg.id} style={styles.assistantCard}>
                 <View style={[styles.optionPill, { backgroundColor: OPTION_COLORS[opt.type] }]}>
@@ -402,6 +429,33 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
                     <Text style={[styles.navArrowText, cIdx === parsed.options.length - 1 && styles.navArrowDisabled]}>›</Text>
                   </TouchableOpacity>
                 </View>
+                {recordId != null && (
+                  <View style={styles.feedbackRow}>
+                    {MOMENT_FEEDBACK_BUTTONS.map(({ type, label }) => {
+                      const active = currentFeedback === type;
+                      return (
+                        <TouchableOpacity
+                          key={type}
+                          style={[styles.feedbackBtn, active && styles.feedbackBtnActive]}
+                          onPress={() => handleMsgFeedback(msg.id, recordId, type)}
+                        >
+                          <Text style={[styles.feedbackBtnText, active && styles.feedbackBtnTextActive]}>
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    <TouchableOpacity
+                      style={[styles.feedbackBtn, savedForMsg.has(opt.type) && styles.feedbackBtnSaved]}
+                      onPress={() => handleMsgSave(msg.id, recordId, opt.type, opt.text)}
+                      disabled={savedForMsg.has(opt.type)}
+                    >
+                      <Text style={[styles.feedbackBtnText, savedForMsg.has(opt.type) && styles.feedbackBtnTextActive]}>
+                        {savedForMsg.has(opt.type) ? '💾 Saved' : '💾 Save'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             );
           })}
@@ -576,6 +630,12 @@ const styles = StyleSheet.create({
   navArrowText: { fontSize: 26, color: '#333', lineHeight: 30 },
   navArrowDisabled: { color: '#ccc' },
   navCounter: { fontSize: 13, color: '#666', minWidth: 40, textAlign: 'center' },
+  feedbackRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  feedbackBtn: { borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: '#e8e8e8' },
+  feedbackBtnActive: { backgroundColor: '#111' },
+  feedbackBtnSaved: { backgroundColor: '#22a06b' },
+  feedbackBtnText: { fontSize: 11, color: '#555' },
+  feedbackBtnTextActive: { color: '#fff', fontWeight: '600' },
   archivedBanner: {
     padding: 16,
     borderTopWidth: 1,

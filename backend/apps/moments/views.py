@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from services.ai_service import ai_service
+from apps.responses.models import AIResponseRecord
 from .models import Moment, MomentMessage
 from .serializers import (
     MomentSerializer, MomentDetailSerializer,
@@ -84,13 +85,28 @@ class MomentListCreateView(APIView):
             history=[],
             new_input=initial_input_text,
         )
+
+        record_id = None
+        try:
+            record = AIResponseRecord.objects.create(
+                user=request.user,
+                mode=AIResponseRecord.Mode.MOMENTS,
+                relationship_context=relationship,
+                situation_summary=initial_input_text[:200],
+                response_json=data,
+            )
+            record_id = record.id
+        except Exception as e:
+            print('AIResponseRecord save failed (moments create):', str(e))
+
         MomentMessage.objects.create(
             moment=moment,
             role=MomentMessage.Role.ASSISTANT,
             content=json.dumps(data),
+            response_record_id=record_id,
         )
 
-        return Response({'moment_id': moment.id, **data}, status=status.HTTP_201_CREATED)
+        return Response({'moment_id': moment.id, **data, 'record_id': record_id}, status=status.HTTP_201_CREATED)
 
 
 class MomentDetailView(APIView):
@@ -147,10 +163,25 @@ class MomentContinueView(APIView):
             history=history,
             new_input=vd['new_input'],
         )
+
+        record_id = None
+        try:
+            record = AIResponseRecord.objects.create(
+                user=request.user,
+                mode=AIResponseRecord.Mode.MOMENTS,
+                relationship_context=moment.relationship_context,
+                situation_summary=vd['new_input'][:200],
+                response_json=data,
+            )
+            record_id = record.id
+        except Exception as e:
+            print('AIResponseRecord save failed (moments continue):', str(e))
+
         MomentMessage.objects.create(
             moment=moment,
             role=MomentMessage.Role.ASSISTANT,
             content=json.dumps(data),
+            response_record_id=record_id,
         )
 
         if moment.messages.count() >= MESSAGE_CAP:
@@ -158,7 +189,7 @@ class MomentContinueView(APIView):
 
         moment.save()  # updates last_active_at via auto_now=True
 
-        return Response({**data, 'is_archived': moment.is_archived})
+        return Response({**data, 'is_archived': moment.is_archived, 'record_id': record_id})
 
 
 class MomentArchiveView(APIView):

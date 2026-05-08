@@ -16,7 +16,7 @@ RELATIONSHIP_CHOICES = [
 class MomentMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = MomentMessage
-        fields = ['id', 'role', 'content', 'created_at']
+        fields = ['id', 'role', 'content', 'response_record_id', 'created_at']
 
 
 class MomentSerializer(serializers.ModelSerializer):
