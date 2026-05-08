@@ -45,14 +45,32 @@ Each option includes the response text and a brief delivery note.
 ### Context Quality Principle
 The more context the user provides, the better and more personalized the output. The app should actively encourage users to provide rich situational context — who they're talking to, what the relationship is, what the vibe is, what they want to achieve. **Thin context produces generic responses. Rich context produces responses that feel like they were written specifically for that moment.** This principle should inform UX copy, input placeholders, and onboarding guidance throughout the app.
 
-## Current Status (as of 2026-05-07)
-Moments feature built and committed. Full backend + frontend complete. Pending before Moments can be tested on device:
-- Run migrations: `sudo docker compose exec backend python manage.py makemigrations moments && sudo docker compose exec backend python manage.py migrate`
-- Rebuild container: `sudo docker compose up --build -d` (to pick up new moments app and updated `ai_service.py`)
+## Current Status (as of 2026-05-08)
+All Phase 1 features complete and pushed. Full stack working end-to-end.
 
-## Upcoming — Phase 2
-- Saved responses screen accessible from HomeScreen — list of all `SavedResponse` records for the user
-- Remove debug `print` statements from `LiveVoiceView` once voice mode is confirmed stable
+**Pending before testing on device (run once):**
+```
+sudo docker compose exec backend python manage.py migrate
+sudo docker compose up --build -d
+```
+This applies the Moments migrations (`0001_initial`, `0002_momentmessage_response_record`) and rebuilds the backend to pick up the updated `moments/views.py` (now imports from `apps.responses`).
+
+## Upcoming — Phase 2: Analytics Dashboard
+Next major feature: an analytics dashboard for understanding how the app is being used and which responses are performing well. Likely scoped as an admin/developer view first, with potential for a user-facing "your stats" screen later. Key data already being collected:
+- `AIResponseRecord` — every AI response (mode, relationship_context, situation_summary, response_json, prompt_version, feedback_counts)
+- `ResponseFeedback` — per-user feedback per response (natural/loved/cringe/risky)
+- `SavedResponse` — saved option text per user
+
+**Planned analytics surfaces:**
+- Response quality: feedback distribution (% natural vs cringe vs risky by mode, by relationship_context)
+- Usage patterns: mode breakdown, most common relationship contexts, daily/weekly active usage
+- Content quality: which option types (safe/playful/bold) get saved most often
+- Moments engagement: thread length distribution, archive rate
+
+**Planned refinements (before or alongside dashboard):**
+- Remove debug `print` statements from `LiveVoiceView` once voice mode confirmed stable
+- Broader social scenario coverage in prompt templates (workplace, networking, friendship tensions)
+- Consider prompt v3 with richer situational framing
 
 ## Upcoming — Other
 - Existing profiles with `persona_type` in `roaster`, `quick_wit`, `deadpan` hold stale values — data cleanup needed before production
@@ -89,6 +107,10 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 | 6 | `relationship_context` + `relationship_other` + `environment` per-request | complete — full stack |
 | 7 | Phase 1 analytics: AIResponseRecord, ResponseFeedback, SavedResponse | complete — full stack |
 | 8 | Moments: persistent multi-turn conversation threads | complete — full stack |
+| 9 | Saved responses screen (My Profile → Saved responses) | complete — full stack |
+| 10 | Undoable single-selection feedback (one at a time, toggle off) | complete — full stack |
+| 11 | Moments feedback (per-message feedback row, record_id on MomentMessage) | complete — full stack |
+| 12 | Analytics dashboard | upcoming — Phase 2 |
 | — | Delivery Coaching (v2) | out of scope |
 
 ## Working Style
@@ -126,4 +148,6 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 - **2026-05-07** — "Edit profile" link renamed to "My Profile" across HomeScreen, TextingModeScreen, and LiveModeScreen.
 - **2026-05-07** — `social_anxiety_level` chip selector added to PersonalitySetupScreen (Comfortable / Mildly nervous / Often nervous / Social situations are hard). `SOCIAL_ANXIETY_LEVELS` constant added to `src/constants/humor.ts`. `social_anxiety_level` added to `Profile` type and `ProfileUpdate` type in `src/types/profile.ts`. Pre-populated from existing profile on load, defaults to `mild`. Full stack now complete for all expanded profile fields.
 - **2026-05-07** — Moments feature complete (full stack). New `apps.moments` Django app with `Moment` (user, title, relationship_context, mode, is_archived, created_at, last_active_at) and `MomentMessage` (moment FK, role user/assistant, content, created_at) models. Four endpoints: `GET/POST /api/moments/`, `GET /api/moments/{id}/`, `POST /api/moments/{id}/continue/`, `PATCH /api/moments/{id}/archive/`. Cap at 38 messages (19 pairs) — auto-archives on cap. `AIService.get_response_with_history()` added for multi-turn Claude API calls with history capped at 36 messages; uses `moments_mode.txt` prompt template. Initial moment creation supports both text and voice (Whisper transcription, same pipeline as LiveVoiceView); continuation is text-only. Frontend: `MomentsScreen` (list with relative timestamps, rel chip, exchange counter, `useFocusEffect` reload); `MomentDetailScreen` (creation form with text + hold-to-record, thread view with right-aligned user bubbles and swipeable assistant OptionCard triplets, per-message card index state, archived banner). Navigation wired: HomeScreen → Moments card → MomentsScreen → MomentDetailScreen. Types in `src/types/moments.ts`. Service in `src/services/momentsService.ts`.
+- **2026-05-08** — Product vision expanded to full-spectrum social copilot. CLAUDE.md `## Project` and `## Product Vision` rewritten: broader framing (workplace, friendships, networking, parties alongside dating), mode differentiation, tone do/avoid lists. Input placeholders updated in TextingModeScreen and LiveModeScreen to include workplace, friend group, and networking examples.
+- **2026-05-08** — Three fixes. (1) Saved responses screen: `GET /api/responses/saved/` returns user's saved items; `SavedResponseListView` + `SavedResponseListSerializer` (flattens mode/relationship_context/situation_summary from related record); `SavedResponsesScreen` with FlatList, option type pill, situation context, timestamp; "💾 Saved responses" banner on My Profile screen. (2) Feedback: one-at-a-time, undoable: `FeedbackView` rewritten — same type deletes (undo), different type replaces (delete old + create new); `feedbackGiven: Set<string>` → `string | null` in TextingModeScreen and LiveModeScreen; buttons always tappable. (3) Moments feedback: `MomentMessage.response_record` FK to `AIResponseRecord` added (nullable, SET_NULL); migration `0002_momentmessage_response_record`; both Moments views create `AIResponseRecord` (mode=`moments`) and store `record_id` on assistant message; `MomentDetailScreen` adds `msgFeedback`/`msgSaved` state per message ID and renders 5-button feedback row on each assistant card.
 - **2026-05-06** — Major context expansion and framing overhaul. `social_anxiety_level` (none/mild/moderate/high, default mild) added to `UserProfile` — migration pending (`0005`). Non-prescriptive language rule embedded as permanent product philosophy and enforced in `system_personality.txt`: all `note` and `delivery` fields must use suggestion framing, never commands. `relationship_context` (stranger/new_acquaintance/crush/friend/close_friend/colleague/date/other) and `relationship_other` (free text, used when other is selected) and `environment` (optional free text) added to both `TextingRequestSerializer` and `LiveRequestSerializer`. `AIService._resolve_relationship()` substitutes `relationship_other` into the prompt when context is "other". All three v2 prompt templates updated: `system_personality.txt` gets `{social_anxiety_level}` and non-prescriptive framing rules; `texting_mode.txt` and `live_mode.txt` get `{relationship_context}` and `{environment}`. Frontend input fields for new request fields are pending next session.
