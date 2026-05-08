@@ -3,21 +3,30 @@
 Session continuity document. Update after every significant implementation step.
 
 ## Project
-Mobile-first AI-powered social confidence and conversational intelligence assistant. Helps users break the ice, reduce awkwardness, flirt naturally, text better, navigate conversations, and become more socially confident. "AI wingman for social confidence."
+An AI-powered social intelligence and situational humor assistant for real-world human interactions. Helps users navigate awkward situations, social tension, workplace interactions, friendships, parties, networking, texting, dating, banter, conversational flow, charisma and confidence. Humor is the tool, not the entire product.
 
 ## Product Vision
-**We are NOT building a joke generator.** We are building an AI-powered social confidence and conversational intelligence assistant. The AI must feel human, emotionally intelligent, context-aware, and socially calibrated.
 
-### Core Philosophy
-- Social intelligence assistant, not a comedy app
-- Prioritize naturalness over cleverness, confidence over jokes, subtle wit over forced humor, realism over maximum humor
-- Responses must sound like something a smart, socially skilled human would actually say — never like AI trying to be funny
+### What Witly Is
+A broader AI social copilot — not a dating reply generator. Three complementary modes cover the full range:
+- **Texting Mode** — quick one-off help with a specific message or situation
+- **Live Mode** — real-time voice-input assistance for situations happening right now
+- **Moments** — persistent ongoing social situations with memory and conversational continuity
+
+Most existing apps focus only on dating/text replies. Witly is built for the full spectrum: workplace tension, friend group dynamics, networking events, parties, awkward silences, first impressions, and yes — dating.
+
+### Tone
+Human, subtle, context-aware, emotionally calibrated, naturally conversational.
+
+**Avoid:** gimmicky rizz-app behavior, pickup-artist energy, try-hard humor, overly polished dialogue, forced cleverness.
+
+**Prioritize:** realism, continuity, low cringe, emotional intelligence, conversational naturalness, socially believable responses.
 
 ### What the AI Must Understand
-Dating situations, parties, texting, workplace interactions, networking, awkward silences, friend groups, social anxiety, casual banter, playful teasing.
+Dating situations, parties, texting, workplace interactions, networking, awkward silences, friend groups, social anxiety, casual banter, playful teasing, conflict de-escalation, first impressions, group dynamics.
 
 ### What the AI Must Avoid
-Creepy behavior, manipulation, aggressive flirting, try-hard humor, edgy internet humor, offensive jokes, robotic phrasing, AI-sounding responses, cringe.
+Creepy behavior, manipulation, aggressive flirting, try-hard humor, edgy internet humor, offensive jokes, robotic phrasing, AI-sounding responses, cringe, pickup-artist framing.
 
 ### Non-Prescriptive Language (permanent product rule)
 The app must **never** directly command users what to say. Do not use language like "Say this", "Use this line", "This will work", "Say exactly this." All suggestions must be framed collaboratively: "You could say something like…", "A playful response could be…", "If the vibe feels right, you might try…", "A safer option might be…"

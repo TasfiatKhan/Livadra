@@ -160,7 +160,7 @@ export default function TextingModeScreen({ navigation }: Props) {
           <Text style={styles.label}>What's the context?</Text>
           <TextInput
             style={styles.textArea}
-            placeholder="e.g. We matched 3 days ago, been texting casually. She just said 'you seem different from most guys'"
+            placeholder="e.g. We matched last week and she just said 'you seem different' / My manager publicly shut down my idea in a meeting / Friend group's been distant since the trip"
             value={context}
             onChangeText={setContext}
             multiline
@@ -172,7 +172,7 @@ export default function TextingModeScreen({ navigation }: Props) {
           <Text style={styles.label}>What do you need?</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. I want to keep it playful without being too eager"
+            placeholder="e.g. I want to be playful without seeming eager / I need to push back without seeming defensive / I want to break the tension without making it weird"
             value={userRequest}
             onChangeText={setUserRequest}
             editable={!isLoading}
@@ -215,7 +215,7 @@ export default function TextingModeScreen({ navigation }: Props) {
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. Late night, conversation's been flirty, she takes a while to reply"
+            placeholder="e.g. Late night, flirty tone / Post-meeting, still tense / Group chat, everyone's watching"
             value={environment}
             onChangeText={setEnvironment}
             editable={!isLoading}

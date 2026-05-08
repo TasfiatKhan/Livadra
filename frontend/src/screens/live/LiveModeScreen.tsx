@@ -219,7 +219,7 @@ export default function LiveModeScreen({ navigation }: Props) {
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. Late night, conversation's been flirty, she takes a while to reply"
+            placeholder="e.g. Party, just introduced / Post-meeting, still tense / Networking event, want to make a real impression"
             value={environment}
             onChangeText={setEnvironment}
             editable={recordingState === 'idle'}
