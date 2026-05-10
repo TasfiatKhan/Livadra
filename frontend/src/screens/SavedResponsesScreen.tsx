@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -70,20 +70,23 @@ export default function SavedResponsesScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const data = await getSavedResponses();
-      setItems(data);
-    } catch {
-      setError('Failed to load saved responses.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(load);
+  useFocusEffect(
+    useCallback(() => {
+      async function fetchData() {
+        setIsLoading(true);
+        setError('');
+        try {
+          const data = await getSavedResponses();
+          setItems(data);
+        } catch {
+          setError('Failed to load saved responses.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      fetchData();
+    }, []),
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
