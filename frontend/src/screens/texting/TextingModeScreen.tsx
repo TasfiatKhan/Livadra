@@ -16,7 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { useAIResponse } from '../../hooks/useAIResponse';
 import { TEXTING_PATH } from '../../services/humorService';
-import { submitFeedback, saveResponse } from '../../services/responsesService';
+import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import { AIOption } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 
@@ -58,6 +58,9 @@ function OptionCard({ option, recordId, feedbackGiven, isSaved, onFeedback, onSa
     await Clipboard.setStringAsync(option.text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+    if (recordId != null) {
+      try { await trackCopy(recordId, option.type); } catch {}
+    }
   };
 
   return (

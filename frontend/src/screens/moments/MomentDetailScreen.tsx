@@ -12,11 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Audio } from 'expo-av';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { createMoment, getMoment, continueMoment } from '../../services/momentsService';
-import { submitFeedback, saveResponse } from '../../services/responsesService';
+import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import { MomentDetail, MomentMessage } from '../../types/moments';
 import { AIOption, AIResponse } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
@@ -74,6 +75,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
   const [cardIndices, setCardIndices] = useState<Record<number, number>>({});
   const [msgFeedback, setMsgFeedback] = useState<Record<number, string | null>>({});
   const [msgSaved, setMsgSaved] = useState<Record<number, Set<string>>>({});
+  const [msgCopied, setMsgCopied] = useState<Record<number, boolean>>({});
+  const [deliveryExpanded, setDeliveryExpanded] = useState<Record<number, boolean>>({});
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -254,6 +257,19 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
     if (saved.has(optionType)) return;
     setMsgSaved(prev => ({ ...prev, [msgId]: new Set([...(prev[msgId] ?? []), optionType]) }));
     try { await saveResponse(recordId, optionType, optionText); } catch {}
+  };
+
+  const handleCopy = async (msgId: number, recordId: number | null, text: string, optionType: string) => {
+    await Clipboard.setStringAsync(text);
+    setMsgCopied(prev => ({ ...prev, [msgId]: true }));
+    setTimeout(() => setMsgCopied(prev => ({ ...prev, [msgId]: false })), 1500);
+    if (recordId != null) {
+      try { await trackCopy(recordId, optionType); } catch {}
+    }
+  };
+
+  const toggleDelivery = (msgId: number) => {
+    setDeliveryExpanded(prev => ({ ...prev, [msgId]: !prev[msgId] }));
   };
 
   const canRecord = relContext !== '';
@@ -442,6 +458,11 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
                 </View>
                 <Text style={styles.optionText}>{opt.text}</Text>
                 <Text style={styles.optionNote}>{opt.note}</Text>
+                <TouchableOpacity style={styles.copyButton} onPress={() => handleCopy(msg.id, recordId, opt.text, opt.type)}>
+                  <Text style={[styles.copyButtonText, msgCopied[msg.id] && styles.copyButtonTextCopied]}>
+                    {msgCopied[msg.id] ? 'Copied!' : 'Copy'}
+                  </Text>
+                </TouchableOpacity>
                 <View style={styles.cardNav}>
                   <TouchableOpacity
                     onPress={() => setCardIndex(idx, cIdx - 1)}
@@ -484,6 +505,16 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
                         {savedForMsg.has(opt.type) ? '💾 Saved' : '💾 Save'}
                       </Text>
                     </TouchableOpacity>
+                  </View>
+                )}
+                <TouchableOpacity style={styles.deliveryToggle} onPress={() => toggleDelivery(msg.id)}>
+                  <Text style={styles.deliveryToggleText}>
+                    {deliveryExpanded[msg.id] ? 'Hide delivery tip ▴' : 'Show delivery tip ▾'}
+                  </Text>
+                </TouchableOpacity>
+                {deliveryExpanded[msg.id] && (
+                  <View style={styles.deliveryCard}>
+                    <Text style={styles.deliveryText}>{parsed.delivery}</Text>
                   </View>
                 )}
               </View>
@@ -678,6 +709,19 @@ const styles = StyleSheet.create({
   navArrowText: { fontSize: 26, color: '#333', lineHeight: 30 },
   navArrowDisabled: { color: '#ccc' },
   navCounter: { fontSize: 13, color: '#666', minWidth: 40, textAlign: 'center' },
+  copyButton: { alignSelf: 'flex-end', paddingVertical: 2, paddingHorizontal: 2 },
+  copyButtonText: { fontSize: 13, color: '#aaa' },
+  copyButtonTextCopied: { color: '#22a06b', fontWeight: '600' },
+  deliveryToggle: { alignItems: 'center', paddingVertical: 6 },
+  deliveryToggleText: { fontSize: 13, color: '#4a6cf7' },
+  deliveryCard: {
+    backgroundColor: '#f0f4ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d6e0ff',
+    padding: 12,
+  },
+  deliveryText: { fontSize: 13, lineHeight: 19, color: '#333' },
   feedbackRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   feedbackBtn: { borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: '#e8e8e8' },
   feedbackBtnActive: { backgroundColor: '#111' },

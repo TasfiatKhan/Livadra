@@ -19,7 +19,7 @@ import { MainStackParamList } from '../../navigation/types';
 import { AIOption, AIResponse } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 import { LIVE_VOICE_PATH } from '../../services/humorService';
-import { submitFeedback, saveResponse } from '../../services/responsesService';
+import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import api from '../../services/api';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'LiveMode'>;
@@ -148,9 +148,13 @@ export default function LiveModeScreen({ navigation }: Props) {
 
   const handleCopy = async () => {
     if (!response) return;
-    await Clipboard.setStringAsync(response.options[currentIndex].text);
+    const option = response.options[currentIndex];
+    await Clipboard.setStringAsync(option.text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+    if (response.record_id != null) {
+      try { await trackCopy(response.record_id, option.type); } catch {}
+    }
   };
 
   const handleFeedback = async (type: string) => {

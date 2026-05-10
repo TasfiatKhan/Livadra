@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ResponseFeedback, SavedResponse
+from .models import ResponseFeedback, SavedResponse, CopiedResponse
 
 
 class FeedbackSerializer(serializers.Serializer):
@@ -11,6 +11,11 @@ class SavedResponseSerializer(serializers.Serializer):
     response_record_id = serializers.IntegerField()
     option_type = serializers.ChoiceField(choices=SavedResponse.OptionType.choices)
     option_text = serializers.CharField()
+
+
+class CopyResponseSerializer(serializers.Serializer):
+    response_record_id = serializers.IntegerField()
+    option_type = serializers.ChoiceField(choices=CopiedResponse.OptionType.choices)
 
 
 class SavedResponseListSerializer(serializers.ModelSerializer):

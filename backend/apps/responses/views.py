@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 
-from .models import AIResponseRecord, ResponseFeedback, SavedResponse
-from .serializers import FeedbackSerializer, SavedResponseSerializer, SavedResponseListSerializer
+from .models import AIResponseRecord, ResponseFeedback, SavedResponse, CopiedResponse
+from .serializers import FeedbackSerializer, SavedResponseSerializer, SavedResponseListSerializer, CopyResponseSerializer
 
 
 class FeedbackView(APIView):
@@ -71,3 +71,24 @@ class SavedResponseListView(APIView):
     def get(self, request):
         saved = SavedResponse.objects.filter(user=request.user).select_related('response_record')
         return Response(SavedResponseListSerializer(saved, many=True).data)
+
+
+class CopyResponseView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CopyResponseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        vd = serializer.validated_data
+
+        try:
+            record = AIResponseRecord.objects.get(id=vd['response_record_id'], user=request.user)
+        except AIResponseRecord.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        CopiedResponse.objects.get_or_create(
+            user=request.user,
+            response_record=record,
+            option_type=vd['option_type'],
+        )
+        return Response({'status': 'ok'})

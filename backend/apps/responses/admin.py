@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AIResponseRecord, ResponseFeedback, SavedResponse
+from .models import AIResponseRecord, ResponseFeedback, SavedResponse, CopiedResponse
 
 
 @admin.register(AIResponseRecord)
@@ -23,4 +23,12 @@ class SavedResponseAdmin(admin.ModelAdmin):
     list_display = ('user', 'option_type', 'response_record', 'created_at')
     list_filter = ('option_type', 'created_at')
     search_fields = ('user__email', 'option_text')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(CopiedResponse)
+class CopiedResponseAdmin(admin.ModelAdmin):
+    list_display = ('user', 'option_type', 'response_record', 'created_at')
+    list_filter = ('option_type', 'created_at')
+    search_fields = ('user__email',)
     readonly_fields = ('created_at',)

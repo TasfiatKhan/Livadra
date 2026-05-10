@@ -50,6 +50,25 @@ class ResponseFeedback(models.Model):
         return f'{self.user} | {self.feedback_type} | record #{self.response_record_id}'
 
 
+class CopiedResponse(models.Model):
+    class OptionType(models.TextChoices):
+        SAFE = 'safe', 'Safe'
+        PLAYFUL = 'playful', 'Playful'
+        BOLD = 'bold', 'Bold'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='copied_responses')
+    response_record = models.ForeignKey(AIResponseRecord, on_delete=models.CASCADE, related_name='copies')
+    option_type = models.CharField(max_length=20, choices=OptionType.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'response_record', 'option_type')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} | {self.option_type} | record #{self.response_record_id}'
+
+
 class SavedResponse(models.Model):
     class OptionType(models.TextChoices):
         SAFE = 'safe', 'Safe'

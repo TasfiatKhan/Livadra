@@ -3,6 +3,7 @@ import api from './api';
 const FEEDBACK_PATH = '/api/responses/feedback/';
 const SAVE_PATH = '/api/responses/save/';
 const SAVED_PATH = '/api/responses/saved/';
+const COPY_PATH = '/api/responses/copy/';
 
 export type SavedResponseItem = {
   id: number;
@@ -33,4 +34,8 @@ export const saveResponse = async (
 export const getSavedResponses = async (): Promise<SavedResponseItem[]> => {
   const { data } = await api.get<SavedResponseItem[]>(SAVED_PATH);
   return data;
+};
+
+export const trackCopy = async (recordId: number, optionType: string): Promise<void> => {
+  await api.post(COPY_PATH, { response_record_id: recordId, option_type: optionType });
 };
