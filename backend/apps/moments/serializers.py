@@ -57,5 +57,13 @@ class MomentCreateSerializer(serializers.Serializer):
 
 
 class MomentContinueSerializer(serializers.Serializer):
-    new_input = serializers.CharField()
+    new_input = serializers.CharField(required=False, default='', allow_blank=True)
     environment = serializers.CharField(required=False, default='', allow_blank=True)
+    audio = serializers.FileField(required=False)
+
+    def validate(self, data):
+        has_text = bool(data.get('new_input', '').strip())
+        has_audio = bool(data.get('audio'))
+        if not has_text and not has_audio:
+            raise serializers.ValidationError('Either new_input or audio must be provided.')
+        return data

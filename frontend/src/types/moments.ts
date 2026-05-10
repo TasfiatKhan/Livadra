@@ -42,4 +42,5 @@ export type ContinueMomentResponse = {
   delivery: string;
   is_archived: boolean;
   record_id: number | null;
+  user_input: string;
 };

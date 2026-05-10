@@ -124,7 +124,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
 
   // Voice recording
   const startRecording = async () => {
-    if (!relContext || recordingState !== 'idle') return;
+    if (recordingState !== 'idle') return;
+    if (localMomentId === null && !relContext) return; // creation form requires relationship selected
     setError('');
     try {
       if (recording) {
@@ -170,9 +171,38 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
 
       const filename = uri.split('/').pop() ?? 'recording.m4a';
       const type = filename.endsWith('.mp4') ? 'audio/mp4' : 'audio/m4a';
-      const formData = buildContextFormData();
-      formData.append('audio', { uri, name: filename, type } as any);
-      await submitMoment(formData);
+
+      if (localMomentId === null) {
+        // Creation path
+        const formData = buildContextFormData();
+        formData.append('audio', { uri, name: filename, type } as any);
+        await submitMoment(formData);
+      } else {
+        // Continuation path
+        const formData = new FormData();
+        formData.append('audio', { uri, name: filename, type } as any);
+        setIsContinuing(true);
+        setError('');
+        try {
+          const { data } = await continueMoment(localMomentId, formData);
+          setMoment(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              is_archived: data.is_archived,
+              messages: [
+                ...prev.messages,
+                { id: Date.now(), role: 'user', content: data.user_input, response_record_id: null, created_at: new Date().toISOString() },
+                { id: Date.now() + 1, role: 'assistant', content: JSON.stringify({ options: data.options, delivery: data.delivery }), response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
+              ],
+            };
+          });
+        } catch (e: any) {
+          setError(e?.response?.data?.detail ?? 'Failed to continue. Please try again.');
+        } finally {
+          setIsContinuing(false);
+        }
+      }
     } catch (e: any) {
       setError('Could not process recording: ' + (e?.message ?? 'unknown error'));
     } finally {
@@ -474,20 +504,38 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
           </View>
         ) : (
           <View style={styles.continueBar}>
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <TouchableOpacity
+                style={[
+                  styles.continueRecordBtn,
+                  recordingState === 'recording' && styles.continueRecordBtnActive,
+                  (isContinuing || recordingState === 'processing') && styles.continueRecordBtnDisabled,
+                ]}
+                onPressIn={startRecording}
+                onPressOut={stopRecording}
+                disabled={isContinuing || recordingState === 'processing'}
+                activeOpacity={0.85}
+              >
+                {recordingState === 'processing'
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <View style={styles.continueRecordDot} />
+                }
+              </TouchableOpacity>
+            </Animated.View>
             <TextInput
               style={styles.continueInput}
-              placeholder="What happened next? What did they say?"
+              placeholder="What happened next?"
               value={newInput}
               onChangeText={setNewInput}
-              editable={!isContinuing}
+              editable={!isContinuing && recordingState === 'idle'}
               multiline
             />
             <TouchableOpacity
-              style={[styles.sendBtn, (!newInput.trim() || isContinuing) && styles.sendBtnDisabled]}
+              style={[styles.sendBtn, (!newInput.trim() || isContinuing || recordingState !== 'idle') && styles.sendBtnDisabled]}
               onPress={handleContinue}
-              disabled={!newInput.trim() || isContinuing}
+              disabled={!newInput.trim() || isContinuing || recordingState !== 'idle'}
             >
-              {isContinuing
+              {isContinuing && recordingState === 'idle'
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <Text style={styles.sendBtnText}>→</Text>
               }
@@ -651,8 +699,20 @@ const styles = StyleSheet.create({
     padding: 12,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
-    gap: 10,
+    gap: 8,
   },
+  continueRecordBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  continueRecordBtnActive: { backgroundColor: '#e53e3e' },
+  continueRecordBtnDisabled: { opacity: 0.35 },
+  continueRecordDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fff' },
   continueInput: {
     flex: 1,
     borderWidth: 1,

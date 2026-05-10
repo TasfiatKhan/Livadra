@@ -2,7 +2,7 @@ import json
 
 import openai
 from django.conf import settings
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,6 +17,7 @@ from .serializers import (
 )
 
 MESSAGE_CAP = 38  # 19 pairs
+ACTIVE_MOMENT_CAP = 5
 
 
 def _resolve_rel(ctx, other):
@@ -30,7 +31,8 @@ class MomentListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        moments = Moment.objects.filter(user=request.user, is_archived=False)
+        archived = request.query_params.get('archived', 'false').lower() == 'true'
+        moments = Moment.objects.filter(user=request.user, is_archived=archived)
         return Response(MomentSerializer(moments, many=True).data)
 
     def post(self, request):
@@ -42,6 +44,13 @@ class MomentListCreateView(APIView):
         if not profile or not profile.is_onboarding_complete:
             return Response(
                 {'detail': 'Please complete your profile before using this feature.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        active_count = Moment.objects.filter(user=request.user, is_archived=False).count()
+        if active_count >= ACTIVE_MOMENT_CAP:
+            return Response(
+                {'detail': f'You have {active_count} active moments. Archive or close one before starting a new one.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -121,6 +130,7 @@ class MomentDetailView(APIView):
 
 
 class MomentContinueView(APIView):
+    parser_classes = [MultiPartParser, JSONParser]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
@@ -146,13 +156,32 @@ class MomentContinueView(APIView):
         serializer.is_valid(raise_exception=True)
         vd = serializer.validated_data
 
+        # Resolve input — text or audio transcription
+        audio_file = vd.get('audio')
+        if audio_file:
+            try:
+                client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+                transcription = client.audio.transcriptions.create(
+                    model='whisper-1',
+                    file=(audio_file.name, audio_file.read(), audio_file.content_type),
+                )
+                user_input = transcription.text
+            except Exception as e:
+                print("Whisper transcription error (moments continue):", str(e))
+                return Response(
+                    {'detail': 'Audio transcription failed. Please try again.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            user_input = vd['new_input'].strip()
+
         # Capture history before adding the new user message
         history = list(moment.messages.order_by('created_at').values('role', 'content'))
 
         MomentMessage.objects.create(
             moment=moment,
             role=MomentMessage.Role.USER,
-            content=vd['new_input'],
+            content=user_input,
         )
 
         data = ai_service.get_response_with_history(
@@ -161,7 +190,7 @@ class MomentContinueView(APIView):
             relationship_other='',
             environment=vd['environment'],
             history=history,
-            new_input=vd['new_input'],
+            new_input=user_input,
         )
 
         record_id = None
@@ -170,7 +199,7 @@ class MomentContinueView(APIView):
                 user=request.user,
                 mode=AIResponseRecord.Mode.MOMENTS,
                 relationship_context=moment.relationship_context,
-                situation_summary=vd['new_input'][:200],
+                situation_summary=user_input[:200],
                 response_json=data,
             )
             record_id = record.id
@@ -189,7 +218,7 @@ class MomentContinueView(APIView):
 
         moment.save()  # updates last_active_at via auto_now=True
 
-        return Response({**data, 'is_archived': moment.is_archived, 'record_id': record_id})
+        return Response({**data, 'is_archived': moment.is_archived, 'record_id': record_id, 'user_input': user_input})
 
 
 class MomentArchiveView(APIView):
