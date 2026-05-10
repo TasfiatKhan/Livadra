@@ -34,28 +34,49 @@ function timeAgo(dateStr: string): string {
 export default function MomentsScreen({ navigation }: Props) {
   const [moments, setMoments] = useState<Moment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       setIsLoading(true);
-      listMoments()
+      listMoments(showArchived)
         .then(({ data }) => { if (active) setMoments(data); })
         .catch(() => {})
         .finally(() => { if (active) setIsLoading(false); });
       return () => { active = false; };
-    }, []),
+    }, [showArchived]),
   );
+
+  const emptyText = showArchived ? 'No archived moments.' : 'No active moments yet.';
+  const emptySubtext = showArchived ? '' : 'Start one to track an ongoing situation.';
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Text style={styles.title}>Moments</Text>
+        {!showArchived && (
+          <TouchableOpacity
+            style={styles.newBtn}
+            onPress={() => navigation.navigate('MomentDetail', { momentId: null })}
+          >
+            <Text style={styles.newBtnText}>+ New</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.toggle}>
         <TouchableOpacity
-          style={styles.newBtn}
-          onPress={() => navigation.navigate('MomentDetail', { momentId: null })}
+          style={[styles.toggleOption, !showArchived && styles.toggleOptionActive]}
+          onPress={() => setShowArchived(false)}
         >
-          <Text style={styles.newBtnText}>+ New</Text>
+          <Text style={[styles.toggleText, !showArchived && styles.toggleTextActive]}>Active</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleOption, showArchived && styles.toggleOptionActive]}
+          onPress={() => setShowArchived(true)}
+        >
+          <Text style={[styles.toggleText, showArchived && styles.toggleTextActive]}>Archived</Text>
         </TouchableOpacity>
       </View>
 
@@ -65,15 +86,15 @@ export default function MomentsScreen({ navigation }: Props) {
         </View>
       ) : moments.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No active moments yet.</Text>
-          <Text style={styles.emptySubtext}>Start one to track an ongoing situation.</Text>
+          <Text style={styles.emptyText}>{emptyText}</Text>
+          {emptySubtext !== '' && <Text style={styles.emptySubtext}>{emptySubtext}</Text>}
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           {moments.map(m => (
             <TouchableOpacity
               key={m.id}
-              style={styles.card}
+              style={[styles.card, m.is_archived && styles.cardArchived]}
               onPress={() => navigation.navigate('MomentDetail', { momentId: m.id })}
               activeOpacity={0.8}
             >
@@ -121,6 +142,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   newBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  toggle: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    padding: 3,
+  },
+  toggleOption: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  toggleOptionActive: { backgroundColor: '#fff' },
+  toggleText: { fontSize: 14, fontWeight: '500', color: '#999' },
+  toggleTextActive: { color: '#111', fontWeight: '600' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   emptyText: { fontSize: 16, fontWeight: '600', color: '#333' },
   emptySubtext: { fontSize: 14, color: '#999' },
@@ -133,6 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
     gap: 10,
   },
+  cardArchived: { opacity: 0.6 },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
