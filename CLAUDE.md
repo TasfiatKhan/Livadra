@@ -45,8 +45,8 @@ Each option includes the response text and a brief delivery note.
 ### Context Quality Principle
 The more context the user provides, the better and more personalized the output. The app should actively encourage users to provide rich situational context — who they're talking to, what the relationship is, what the vibe is, what they want to achieve. **Thin context produces generic responses. Rich context produces responses that feel like they were written specifically for that moment.** This principle should inform UX copy, input placeholders, and onboarding guidance throughout the app.
 
-## Current Status (as of 2026-05-10)
-All Phase 1 + Phase 1.5 features complete and pushed. Full stack working end-to-end.
+## Current Status (as of 2026-05-11)
+All Phase 1 + Phase 1.5 features complete and pushed. UX refinement phase underway. Full stack working end-to-end.
 
 **Pending before testing on device (run once):**
 ```
@@ -54,6 +54,12 @@ sudo docker compose exec backend python manage.py migrate
 sudo docker compose up --build -d
 ```
 This applies: `responses/0002_copiedresponse`, `moments/0001_initial`, `moments/0002_momentmessage_response_record`.
+
+## Upcoming — Phase 1.75: UX Refinement
+Design token system is in place. Next steps:
+- Apply theme tokens to any remaining non-screen components (navigation headers, modals)
+- Screen-by-screen UX pass: layout spacing, visual hierarchy, empty states
+- Onboarding flow polish
 
 ## Upcoming — Phase 2: Analytics Dashboard
 Next major feature: an analytics dashboard for understanding how the app is being used and which responses are performing well. Likely scoped as an admin/developer view first, with potential for a user-facing "your stats" screen later. Key data already being collected:
@@ -118,7 +124,8 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 | 17 | Tap-to-record (replaces hold-to-record) in Live Mode + Moments | complete — full stack |
 | 18 | Live Mode: empty transcription guard + visible pulse animation | complete — full stack |
 | 19 | Short punchy response enforcement in live_mode.txt + moments_mode.txt | complete — backend |
-| 20 | Analytics dashboard | upcoming — Phase 2 |
+| 20 | Design token system (`theme.ts`) + applied to all screens | complete — frontend |
+| 21 | Analytics dashboard | upcoming — Phase 2 |
 | — | Delivery Coaching (v2) | out of scope |
 
 ## Working Style
@@ -167,4 +174,5 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 - **2026-05-10** — Tap-to-record UX across Live Mode and Moments. `onPressIn`/`onPressOut` (hold-to-record) replaced with `onPress` (tap to start, tap again to stop) in `LiveModeScreen` and both recording buttons in `MomentDetailScreen` (creation form + continue bar). `toggleRecording()` helper added to each screen. Labels updated: "Hold to speak" → "Tap to speak". Minimum hold duration check removed.
 - **2026-05-10** — Live Mode recording improvements. Empty/near-empty transcription guard added to `LiveVoiceView`: transcriptions under 10 characters return a 400 before reaching the AI. Pulse animation made visually distinct: `Animated.parallel` drives both scale (1→1.28) and opacity (1→0.55) at 500ms so the recording state is unmistakably visible.
 - **2026-05-10** — Short punchy response enforcement in prompts. `live_mode.txt` and `moments_mode.txt` updated: `text` fields explicitly capped at 1-2 lines (speakable in under 2 seconds), `note` fields capped at one short sentence, `delivery` capped at 1-2 sentences. Analytical/explanatory framing stripped. `ai_service.py`: live mode `max_tokens` reduced 1024 → 600 to match shorter expected output and improve response speed.
+- **2026-05-11** — Design token system. `frontend/src/theme.ts` created: `colors` (background `#FAFAF8`, surface, accent `#C4956A`, safe/playful/bold option colors, full semantic set), `typography` (sizes, lineHeights, weights), `spacing` (xs–xxl), `radii` (sm–full), `shadow.card` (warm brown-tinted). Applied to all 9 screens: HomeScreen, TextingModeScreen, LiveModeScreen, MomentsScreen, MomentDetailScreen, PersonalitySetupScreen, SavedResponsesScreen, LoginScreen, RegisterScreen. No hardcoded hex colors, font sizes, or spacing values remain in any screen. Black action buttons replaced with `colors.accent`. `OPTION_COLORS` constants in all screens now reference `colors.safe/playful/bold`.
 - **2026-05-06** — Major context expansion and framing overhaul. `social_anxiety_level` (none/mild/moderate/high, default mild) added to `UserProfile` — migration pending (`0005`). Non-prescriptive language rule embedded as permanent product philosophy and enforced in `system_personality.txt`: all `note` and `delivery` fields must use suggestion framing, never commands. `relationship_context` (stranger/new_acquaintance/crush/friend/close_friend/colleague/date/other) and `relationship_other` (free text, used when other is selected) and `environment` (optional free text) added to both `TextingRequestSerializer` and `LiveRequestSerializer`. `AIService._resolve_relationship()` substitutes `relationship_other` into the prompt when context is "other". All three v2 prompt templates updated: `system_personality.txt` gets `{social_anxiety_level}` and non-prescriptive framing rules; `texting_mode.txt` and `live_mode.txt` get `{relationship_context}` and `{environment}`. Frontend input fields for new request fields are pending next session.
