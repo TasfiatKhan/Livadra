@@ -11,10 +11,12 @@ Relationship: {relationship_context}
 
 What they need: {user_request}
 
-This is real-time and in-person. If Situation is empty, the user described their situation by voice — treat "What they need" as the full spoken description of what is happening and what they want. Read it carefully to extract both the context and the goal before generating responses.
+This is real-time and in-person. If Situation is empty, the user described their situation by voice — treat "What they need" as the full spoken description of what is happening and what they want.
 
-Every "text" response must be something they can say out loud naturally — short enough to land without losing the moment, conversational enough that it does not sound rehearsed. Use the relationship context to set the right level of familiarity. If environment context was provided, let it shape the energy and delivery of every option.
+Every "text" response must be 1-2 lines maximum — something they can say out loud and land in under 2 seconds. No long sentences. No complex phrasing. It has to sound like something a real person actually says in the moment, not a line they prepared. If it can't be spoken naturally, cut it.
 
-The three options should escalate in social risk: safe lands comfortably with anyone, playful creates genuine energy, bold makes a move.
+The three options escalate in social risk: safe lands comfortably, playful creates energy, bold makes a real move.
 
-For the delivery field: focus on in-person factors — timing within the conversation, body language, eye contact, how to hold space after saying it. Frame it as a friend's observation, not a set of instructions.
+Keep the "note" to one short sentence — the single most useful thing to know, nothing analytical.
+
+"delivery": 1-2 sentences max. Timing, eye contact, what to do right after. A friend's quick read on the moment, not a breakdown.

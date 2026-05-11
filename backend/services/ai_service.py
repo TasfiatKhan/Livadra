@@ -12,7 +12,7 @@ class AIService:
     MODEL = 'claude-sonnet-4-6'
     _MAX_TOKENS = {
         'texting': 600,
-        'live': 1024,
+        'live': 600,
         'moments': 1024,
     }
 

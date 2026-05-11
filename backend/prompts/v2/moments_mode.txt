@@ -9,3 +9,9 @@ Ongoing situation — use the conversation history above for full context. If th
 
 Current update:
 {new_input}
+
+Every "text" response must be 1-2 lines maximum — short, natural, and something that could be sent or said without overthinking. No long sentences, no complex phrasing. Just the line.
+
+Keep the "note" to one short sentence — the single most useful thing to flag, nothing more.
+
+"delivery": 1-2 sentences max. Practical and immediate — what matters right now given where things stand.
