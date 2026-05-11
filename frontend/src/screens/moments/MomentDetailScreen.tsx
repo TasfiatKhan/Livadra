@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   KeyboardAvoidingView,
   Platform,
@@ -16,7 +17,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Audio } from 'expo-av';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
-import { createMoment, getMoment, continueMoment } from '../../services/momentsService';
+import { createMoment, getMoment, continueMoment, toggleMomentArchive } from '../../services/momentsService';
 import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import { MomentDetail, MomentMessage } from '../../types/moments';
 import { AIOption, AIResponse } from '../../types/humor';
@@ -72,6 +73,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
   // Thread state
   const [newInput, setNewInput] = useState('');
   const [isContinuing, setIsContinuing] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [cardIndices, setCardIndices] = useState<Record<number, number>>({});
   const [msgFeedback, setMsgFeedback] = useState<Record<number, string | null>>({});
   const [msgSaved, setMsgSaved] = useState<Record<number, Set<string>>>({});
@@ -272,6 +274,38 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
     setDeliveryExpanded(prev => ({ ...prev, [msgId]: !prev[msgId] }));
   };
 
+  const handleToggleArchive = () => {
+    if (!localMomentId || isArchiving || !moment) return;
+    const willArchive = !moment.is_archived;
+    Alert.alert(
+      willArchive ? 'Archive this moment?' : 'Unarchive this moment?',
+      willArchive ? "You won't be able to continue it until you unarchive it." : 'This will move it back to your active moments.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: willArchive ? 'Archive' : 'Unarchive',
+          style: willArchive ? 'destructive' : 'default',
+          onPress: async () => {
+            setIsArchiving(true);
+            try {
+              const { data } = await toggleMomentArchive(localMomentId);
+              setMoment(prev => prev ? { ...prev, is_archived: data.is_archived } : prev);
+            } catch (e: any) {
+              setError(e?.response?.data?.detail ?? `Failed to ${willArchive ? 'archive' : 'unarchive'}. Please try again.`);
+            } finally {
+              setIsArchiving(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const toggleRecording = () => {
+    if (recordingState === 'idle') startRecording();
+    else if (recordingState === 'recording') stopRecording();
+  };
+
   const canRecord = relContext !== '';
   const formBusy = isCreating || recordingState !== 'idle';
 
@@ -380,10 +414,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
                     recordingState === 'recording' && styles.recordButtonActive,
                     (!canRecord || recordingState === 'processing' || isCreating) && styles.recordButtonDisabled,
                   ]}
-                  onPressIn={startRecording}
-                  onPressOut={stopRecording}
+                  onPress={toggleRecording}
                   disabled={!canRecord || recordingState === 'processing' || isCreating}
-                  activeOpacity={0.85}
                 >
                   {recordingState === 'processing' ? (
                     <ActivityIndicator color="#fff" size="small" />
@@ -394,7 +426,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
               </Animated.View>
               <Text style={[styles.recordLabel, !canRecord && styles.recordLabelMuted]}>
                 {recordingState === 'idle'
-                  ? canRecord ? 'Hold to speak your situation' : "Select who you're talking to first"
+                  ? canRecord ? 'Tap to speak your situation' : "Select who you're talking to first"
                   : recordingState === 'recording' ? 'Recording…' : 'Processing…'}
               </Text>
             </View>
@@ -427,6 +459,16 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
           <Text style={styles.threadTitle} numberOfLines={1}>{moment.title}</Text>
           <Text style={styles.exchangeCount}>{exchangeCount}/19</Text>
+          <TouchableOpacity
+            style={styles.archiveBtn}
+            onPress={handleToggleArchive}
+            disabled={isArchiving}
+          >
+            {isArchiving
+              ? <ActivityIndicator size="small" color="#999" />
+              : <Text style={styles.archiveBtnText}>{moment.is_archived ? 'Unarchive' : 'Archive'}</Text>
+            }
+          </TouchableOpacity>
         </View>
 
         <ScrollView ref={scrollRef} contentContainerStyle={styles.threadScroll}>
@@ -526,9 +568,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
 
         {moment.is_archived ? (
           <View style={styles.archivedBanner}>
-            <Text style={styles.archivedText}>
-              This moment has ended (19/19 exchanges used).
-            </Text>
+            <Text style={styles.archivedText}>{exchangeCount}/19 exchanges used.</Text>
             <TouchableOpacity onPress={() => navigation.navigate('MomentDetail', { momentId: null })}>
               <Text style={styles.archivedLink}>Start a new one →</Text>
             </TouchableOpacity>
@@ -542,10 +582,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
                   recordingState === 'recording' && styles.continueRecordBtnActive,
                   (isContinuing || recordingState === 'processing') && styles.continueRecordBtnDisabled,
                 ]}
-                onPressIn={startRecording}
-                onPressOut={stopRecording}
+                onPress={toggleRecording}
                 disabled={isContinuing || recordingState === 'processing'}
-                activeOpacity={0.85}
               >
                 {recordingState === 'processing'
                   ? <ActivityIndicator color="#fff" size="small" />
@@ -670,6 +708,8 @@ const styles = StyleSheet.create({
   },
   threadTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: '#111' },
   exchangeCount: { fontSize: 12, color: '#aaa', flexShrink: 0 },
+  archiveBtn: { paddingHorizontal: 10, paddingVertical: 4, marginLeft: 4 },
+  archiveBtnText: { fontSize: 13, color: '#aaa' },
   threadScroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, gap: 12 },
   userBubbleRow: { alignItems: 'flex-end' },
   userBubble: {

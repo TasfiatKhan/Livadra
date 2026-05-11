@@ -229,6 +229,15 @@ class MomentArchiveView(APIView):
             moment = Moment.objects.get(id=pk, user=request.user)
         except Moment.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
-        moment.is_archived = True
+        if moment.is_archived:
+            active_count = Moment.objects.filter(user=request.user, is_archived=False).count()
+            if active_count >= ACTIVE_MOMENT_CAP:
+                return Response(
+                    {'detail': f'You can have at most {ACTIVE_MOMENT_CAP} active moments. Archive one first.'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            moment.is_archived = False
+        else:
+            moment.is_archived = True
         moment.save(update_fields=['is_archived'])
-        return Response({'status': 'archived'})
+        return Response({'is_archived': moment.is_archived})

@@ -19,5 +19,5 @@ export const continueMoment = (id: number, data: { new_input: string; environmen
     data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined,
   );
 
-export const archiveMoment = (id: number) =>
-  api.patch(`/api/moments/${id}/archive/`);
+export const toggleMomentArchive = (id: number) =>
+  api.patch<{ is_archived: boolean }>(`/api/moments/${id}/archive/`);

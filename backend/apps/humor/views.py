@@ -124,6 +124,12 @@ class LiveVoiceView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if len(transcription.text.strip()) < 10:
+            return Response(
+                {'detail': 'No speech detected. Press and hold, then describe your situation clearly.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         vd = serializer.validated_data
         data = ai_service.get_live_response(
             user_id=request.user.id,

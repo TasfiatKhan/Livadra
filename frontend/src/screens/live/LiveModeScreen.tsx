@@ -59,6 +59,7 @@ export default function LiveModeScreen({ navigation }: Props) {
   const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseOpacity = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
@@ -95,9 +96,15 @@ export default function LiveModeScreen({ navigation }: Props) {
       setResponse(null);
 
       pulseLoop.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.22, duration: 600, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(pulseAnim, { toValue: 1.28, duration: 500, useNativeDriver: true }),
+            Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+          ]),
+          Animated.sequence([
+            Animated.timing(pulseOpacity, { toValue: 0.55, duration: 500, useNativeDriver: true }),
+            Animated.timing(pulseOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+          ]),
         ]),
       );
       pulseLoop.current.start();
@@ -111,6 +118,7 @@ export default function LiveModeScreen({ navigation }: Props) {
     if (!recording || recordingState !== 'recording') return;
     pulseLoop.current?.stop();
     pulseAnim.setValue(1);
+    pulseOpacity.setValue(1);
     setRecordingState('processing');
 
     try {
@@ -169,6 +177,11 @@ export default function LiveModeScreen({ navigation }: Props) {
     if (savedOptions.has(option.type)) return;
     setSavedOptions(prev => new Set(prev).add(option.type));
     try { await saveResponse(response.record_id, option.type, option.text); } catch {}
+  };
+
+  const toggleRecording = () => {
+    if (recordingState === 'idle') startRecording();
+    else if (recordingState === 'recording') stopRecording();
   };
 
   const canRecord = relationshipContext !== '';
@@ -230,17 +243,15 @@ export default function LiveModeScreen({ navigation }: Props) {
           />
 
           <View style={styles.recordSection}>
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <Animated.View style={{ transform: [{ scale: pulseAnim }], opacity: pulseOpacity }}>
               <TouchableOpacity
                 style={[
                   styles.recordButton,
                   recordingState === 'recording' && styles.recordButtonActive,
                   (!canRecord || recordingState === 'processing') && styles.recordButtonDisabled,
                 ]}
-                onPressIn={startRecording}
-                onPressOut={stopRecording}
+                onPress={toggleRecording}
                 disabled={!canRecord || recordingState === 'processing'}
-                activeOpacity={0.85}
               >
                 {recordingState === 'processing' ? (
                   <ActivityIndicator color="#fff" size="small" />
@@ -252,7 +263,7 @@ export default function LiveModeScreen({ navigation }: Props) {
             <Text style={[styles.recordLabel, !canRecord && styles.recordLabelMuted]}>
               {recordingState === 'idle'
                 ? canRecord
-                  ? 'Hold to speak'
+                  ? 'Tap to speak'
                   : "Select who you're talking to first"
                 : recordingState === 'recording'
                 ? 'Recording…'
