@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../navigation/types';
 import { getSavedResponses, SavedResponseItem } from '../services/responsesService';
+import { colors, typography, spacing, radii, shadow } from '../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'SavedResponses'>;
 
@@ -22,9 +23,9 @@ const OPTION_LABELS: Record<SavedResponseItem['option_type'], string> = {
 };
 
 const OPTION_COLORS: Record<SavedResponseItem['option_type'], string> = {
-  safe: '#4a90d9',
-  playful: '#e67e22',
-  bold: '#c0392b',
+  safe: colors.safe,
+  playful: colors.playful,
+  bold: colors.bold,
 };
 
 const MODE_LABELS: Record<string, string> = {
@@ -123,45 +124,46 @@ export default function SavedResponsesScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: spacing.md,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    gap: 4,
+    borderBottomColor: colors.surfaceSecondary,
+    gap: spacing.xs,
   },
-  backBtn: { paddingBottom: 4 },
-  backBtnText: { fontSize: 15, color: '#555' },
-  title: { fontSize: 22, fontWeight: '700', color: '#111' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  error: { color: '#e53e3e', fontSize: 14, textAlign: 'center' },
-  empty: { fontSize: 16, fontWeight: '600', color: '#333', textAlign: 'center' },
-  emptySub: { fontSize: 14, color: '#999', textAlign: 'center', marginTop: 8 },
-  list: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 48, gap: 12 },
+  backBtn: { paddingBottom: spacing.xs },
+  backBtnText: { fontSize: typography.sizes.base, color: colors.textSecondary },
+  title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, color: colors.textPrimary },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+  error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center' },
+  empty: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textSecondary, textAlign: 'center' },
+  emptySub: { fontSize: typography.sizes.label, color: colors.textTertiary, textAlign: 'center', marginTop: spacing.sm },
+  list: { paddingHorizontal: spacing.md, paddingTop: 12, paddingBottom: spacing.xxl, gap: 12 },
   card: {
-    backgroundColor: '#f7f7f7',
-    borderRadius: 12,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: colors.border,
     padding: 14,
-    gap: 8,
+    gap: spacing.sm,
+    ...shadow.card,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
     flexWrap: 'wrap',
   },
   pill: {
-    borderRadius: 20,
+    borderRadius: radii.full,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
-  pillText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
-  meta: { fontSize: 12, color: '#888', flex: 1 },
-  timestamp: { fontSize: 11, color: '#bbb' },
-  situation: { fontSize: 13, color: '#999', fontStyle: 'italic', lineHeight: 18 },
-  optionText: { fontSize: 15, lineHeight: 22, color: '#111', fontWeight: '500' },
+  pillText: { color: colors.surface, fontSize: 11, fontWeight: typography.weights.bold, letterSpacing: 0.4 },
+  meta: { fontSize: typography.sizes.small, color: colors.textTertiary, flex: 1 },
+  timestamp: { fontSize: 11, color: colors.textTertiary },
+  situation: { fontSize: typography.sizes.label, color: colors.textTertiary, fontStyle: 'italic', lineHeight: 18 },
+  optionText: { fontSize: typography.sizes.base, lineHeight: 22, color: colors.textPrimary, fontWeight: typography.weights.medium },
 });

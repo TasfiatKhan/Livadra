@@ -12,6 +12,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
+import { colors, typography, spacing, radii } from '../../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -110,54 +111,54 @@ export default function RegisterScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.lg,
     gap: 12,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 8,
+    fontSize: typography.sizes.title,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.sm,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: typography.sizes.base,
   },
   error: {
-    color: '#e53e3e',
-    fontSize: 14,
+    color: colors.error,
+    fontSize: typography.sizes.label,
   },
   button: {
-    backgroundColor: '#000',
-    borderRadius: 8,
+    backgroundColor: colors.accent,
+    borderRadius: radii.sm,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.surface,
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.semibold,
   },
   link: {
     textAlign: 'center',
-    color: '#666',
-    fontSize: 14,
-    marginTop: 8,
+    color: colors.textTertiary,
+    fontSize: typography.sizes.label,
+    marginTop: spacing.sm,
   },
   linkBold: {
-    fontWeight: '700',
-    color: '#000',
+    fontWeight: typography.weights.bold,
+    color: colors.textPrimary,
   },
 });

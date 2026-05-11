@@ -10,6 +10,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../navigation/types';
 import { useProfile } from '../hooks/useProfile';
+import { colors, typography, spacing, radii } from '../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Home'>;
 
@@ -81,58 +82,58 @@ export default function HomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl,
     paddingBottom: 36,
   },
   header: {
-    marginBottom: 48,
+    marginBottom: spacing.xxl,
   },
   appName: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#000',
+    color: colors.textPrimary,
     letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: 16,
-    color: '#888',
+    fontSize: typography.sizes.base,
+    color: colors.textTertiary,
     marginTop: 6,
   },
   cards: {
     flex: 1,
-    gap: 16,
+    gap: spacing.md,
     justifyContent: 'center',
   },
   card: {
     borderWidth: 1.5,
-    borderColor: '#e0e0e0',
-    borderRadius: 16,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    backgroundColor: '#fafafa',
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surfaceSecondary,
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#000',
+    fontWeight: typography.weights.bold,
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   cardSubtitle: {
-    fontSize: 15,
-    color: '#666',
+    fontSize: typography.sizes.base,
+    color: colors.textTertiary,
   },
   editLink: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
   editLinkText: {
-    color: '#999',
-    fontSize: 14,
+    color: colors.textTertiary,
+    fontSize: typography.sizes.label,
     textDecorationLine: 'underline',
   },
 });
