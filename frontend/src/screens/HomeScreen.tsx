@@ -12,6 +12,7 @@ import { MainStackParamList } from '../navigation/types';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../context/ThemeContext';
 import { typography, spacing, radii } from '../theme';
+import WitlyLogo from '../components/common/WitlyLogo';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Home'>;
 
@@ -40,16 +41,10 @@ export default function HomeScreen({ navigation }: Props) {
       gap: spacing.sm,
       marginTop: 4,
     },
-    appName: {
-      fontSize: 32,
-      fontWeight: '800',
-      color: colors.textPrimary,
-      letterSpacing: -0.5,
-    },
     tagline: {
       fontSize: typography.sizes.base,
       color: colors.textTertiary,
-      marginTop: 6,
+      marginTop: spacing.sm,
     },
     themeToggle: {
       width: 44,
@@ -133,7 +128,7 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={styles.container}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.appName}>Witly</Text>
+            <WitlyLogo size={56} />
             <Text style={styles.tagline}>Your social confidence coach</Text>
           </View>
           <View style={styles.headerRight}>
