@@ -2,13 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   ActivityIndicator,
   Animated,
-  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -17,7 +15,6 @@ import { Audio } from 'expo-av';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { AIOption, AIResponse } from '../../types/humor';
-import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 import { LIVE_VOICE_PATH } from '../../services/humorService';
 import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import api from '../../services/api';
@@ -57,12 +54,8 @@ export default function LiveModeScreen({ navigation }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-  const [relationshipContext, setRelationshipContext] = useState('');
-  const [relationshipOther, setRelationshipOther] = useState('');
-  const [environment, setEnvironment] = useState('');
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
-  const [contextExpanded, setContextExpanded] = useState(false);
   const [noteVisible, setNoteVisible] = useState(false);
   const [deliveryVisible, setDeliveryVisible] = useState(false);
 
@@ -84,7 +77,6 @@ export default function LiveModeScreen({ navigation }: Props) {
   }, [response]);
 
   const startRecording = async () => {
-    if (relationshipContext === '') return;
     setError('');
     try {
       if (recording) {
@@ -117,7 +109,7 @@ export default function LiveModeScreen({ navigation }: Props) {
         ]),
       );
       pulseLoop.current.start();
-    } catch (e: any) {
+    } catch {
       setError('Could not start recording.');
     }
   };
@@ -139,13 +131,6 @@ export default function LiveModeScreen({ navigation }: Props) {
       const type = filename.endsWith('.mp4') ? 'audio/mp4' : 'audio/m4a';
       const formData = new FormData();
       formData.append('audio', { uri, name: filename, type } as any);
-      formData.append('relationship_context', relationshipContext);
-      if (relationshipContext === 'other' && relationshipOther) {
-        formData.append('relationship_other', relationshipOther);
-      }
-      if (environment.trim()) {
-        formData.append('environment', environment);
-      }
 
       const { data } = await api.post<AIResponse>(LIVE_VOICE_PATH, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -191,119 +176,37 @@ export default function LiveModeScreen({ navigation }: Props) {
     else if (recordingState === 'recording') stopRecording();
   };
 
-  const canRecord = relationshipContext !== '';
   const currentOption = response?.options[currentIndex];
 
   const recordStatus =
     recordingState === 'recording' ? 'Tap to stop' :
     recordingState === 'processing' ? 'Processing…' :
-    canRecord ? 'Tap to speak' : "Select who you're with";
+    'Tap to speak';
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
-            <Text style={styles.headerBtnText}>←</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('PersonalitySetup')} style={styles.headerBtn}>
-            <Text style={styles.headerBtnText}>Profile</Text>
-          </TouchableOpacity>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>←</Text>
+        </TouchableOpacity>
+      </View>
+
+      {!response && (
+        <View style={styles.instructionWrap} pointerEvents="none">
+          <Text style={styles.instructionText}>
+            Provide as much context as possible, where you are, how's the environment, who you talking to, what you want......
+          </Text>
         </View>
+      )}
 
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+      <View style={styles.content}>
+        {response && (
           <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsRow}
+            contentContainerStyle={styles.responseScroll}
+            showsVerticalScrollIndicator={false}
           >
-            {RELATIONSHIP_CONTEXTS.map((opt) => {
-              const selected = relationshipContext === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                  onPress={() => {
-                    setRelationshipContext(opt.value);
-                    if (opt.value !== 'other') setRelationshipOther('');
-                  }}
-                  disabled={recordingState !== 'idle'}
-                >
-                  <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {relationshipContext === 'other' && (
-            <TextInput
-              style={styles.otherInput}
-              placeholder="Describe…"
-              placeholderTextColor={colors.textTertiary}
-              value={relationshipOther}
-              onChangeText={setRelationshipOther}
-              editable={recordingState === 'idle'}
-            />
-          )}
-
-          <TouchableOpacity
-            style={styles.contextToggle}
-            onPress={() => setContextExpanded(e => !e)}
-          >
-            <Text style={styles.contextToggleText}>
-              {contextExpanded ? 'Hide context ▴' : '+ Add context'}
-            </Text>
-          </TouchableOpacity>
-
-          {contextExpanded && (
-            <TextInput
-              style={styles.contextInput}
-              placeholder="vibe, setting, tone…"
-              placeholderTextColor={colors.textTertiary}
-              value={environment}
-              onChangeText={setEnvironment}
-              editable={recordingState === 'idle'}
-            />
-          )}
-
-          <View style={styles.recordSection}>
-            <Animated.View style={{ transform: [{ scale: pulseAnim }], opacity: pulseOpacity }}>
-              <TouchableOpacity
-                style={[
-                  styles.recordButton,
-                  recordingState === 'recording' && styles.recordButtonActive,
-                  (!canRecord || recordingState === 'processing') && styles.recordButtonDisabled,
-                ]}
-                onPress={toggleRecording}
-                disabled={!canRecord || recordingState === 'processing'}
-                activeOpacity={0.8}
-              >
-                {recordingState === 'processing' ? (
-                  <ActivityIndicator color={colors.surface} size="small" />
-                ) : (
-                  <View style={[
-                    styles.recordDot,
-                    recordingState === 'recording' && styles.recordDotActive,
-                  ]} />
-                )}
-              </TouchableOpacity>
-            </Animated.View>
-            <Text style={[styles.recordStatus, !canRecord && styles.recordStatusMuted]}>
-              {recordStatus}
-            </Text>
-          </View>
-
-          {error !== '' && <Text style={styles.error}>{error}</Text>}
-
-          {response && currentOption && (
-            <View style={styles.responseSection}>
+            {currentOption && (
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <TouchableOpacity onPress={handleCopy} style={styles.copyBtn}>
@@ -329,12 +232,8 @@ export default function LiveModeScreen({ navigation }: Props) {
                   </View>
                 </View>
 
-                {noteVisible && (
-                  <Text style={styles.subText}>{currentOption.note}</Text>
-                )}
-                {deliveryVisible && (
-                  <Text style={styles.subText}>{response.delivery}</Text>
-                )}
+                {noteVisible && <Text style={styles.subText}>{currentOption.note}</Text>}
+                {deliveryVisible && <Text style={styles.subText}>{response.delivery}</Text>}
 
                 {response.record_id != null && (
                   <View style={styles.feedbackRow}>
@@ -360,115 +259,89 @@ export default function LiveModeScreen({ navigation }: Props) {
                   </View>
                 )}
               </View>
+            )}
 
-              <View style={styles.navRow}>
-                <TouchableOpacity
-                  onPress={() => setCurrentIndex(i => i - 1)}
-                  disabled={currentIndex === 0}
-                  style={styles.navBtn}
-                >
-                  <Text style={[styles.navArrow, currentIndex === 0 && styles.navArrowDisabled]}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.navCounter}>{currentIndex + 1} / {response.options.length}</Text>
-                <TouchableOpacity
-                  onPress={() => setCurrentIndex(i => i + 1)}
-                  disabled={currentIndex === response.options.length - 1}
-                  style={styles.navBtn}
-                >
-                  <Text style={[styles.navArrow, currentIndex === response.options.length - 1 && styles.navArrowDisabled]}>›</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.navRow}>
+              <TouchableOpacity
+                onPress={() => setCurrentIndex(i => i - 1)}
+                disabled={currentIndex === 0}
+                style={styles.navBtn}
+              >
+                <Text style={[styles.navArrow, currentIndex === 0 && styles.navArrowDisabled]}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.navCounter}>{currentIndex + 1} / {response.options.length}</Text>
+              <TouchableOpacity
+                onPress={() => setCurrentIndex(i => i + 1)}
+                disabled={currentIndex === response.options.length - 1}
+                style={styles.navBtn}
+              >
+                <Text style={[styles.navArrow, currentIndex === response.options.length - 1 && styles.navArrowDisabled]}>›</Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        )}
+      </View>
+
+      <View style={styles.bottomBar}>
+        {error !== '' && <Text style={styles.error}>{error}</Text>}
+        <Animated.View style={{ transform: [{ scale: pulseAnim }], opacity: pulseOpacity }}>
+          <TouchableOpacity
+            style={[
+              styles.recordButton,
+              recordingState === 'processing' && styles.recordButtonDisabled,
+            ]}
+            onPress={toggleRecording}
+            disabled={recordingState === 'processing'}
+            activeOpacity={0.8}
+          >
+            {recordingState === 'processing' ? (
+              <ActivityIndicator color={colors.surface} size="small" />
+            ) : (
+              <View style={[styles.recordDot, recordingState === 'recording' && styles.recordDotActive]} />
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+        <Text style={styles.recordStatus}>{recordStatus}</Text>
+      </View>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: DARK_BG },
-  flex: { flex: 1 },
-  scroll: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xxl,
-    gap: spacing.md,
-  },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
-  headerBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
-  headerBtnText: { color: colors.textTertiary, fontSize: typography.sizes.label },
+  backBtn: { padding: spacing.sm, alignSelf: 'flex-start' },
+  backBtnText: { color: colors.surface, fontSize: 28, fontWeight: typography.weights.bold },
 
-  chipsRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  chip: {
-    borderRadius: radii.full,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
-    backgroundColor: DARK_CHIP,
-  },
-  chipSelected: { backgroundColor: colors.accent },
-  chipText: { fontSize: typography.sizes.label, color: colors.textTertiary },
-  chipTextSelected: { color: colors.surface, fontWeight: typography.weights.semibold },
+  content: { flex: 1, paddingHorizontal: spacing.md },
 
-  otherInput: {
-    backgroundColor: DARK_CHIP,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: typography.sizes.base,
-    color: colors.surface,
-  },
-
-  contextToggle: { alignSelf: 'flex-start', paddingVertical: spacing.xs },
-  contextToggleText: { fontSize: typography.sizes.label, color: colors.textTertiary },
-
-  contextInput: {
-    backgroundColor: DARK_CHIP,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: typography.sizes.base,
-    color: colors.surface,
-  },
-
-  recordSection: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
-    marginBottom: spacing.lg,
-    gap: spacing.md,
-  },
-  recordButton: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: DARK_CHIP,
-    alignItems: 'center',
+  instructionWrap: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: spacing.md,
+    right: spacing.md,
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: DARK_BORDER,
+    alignItems: 'center',
   },
-  recordButtonActive: { backgroundColor: colors.error, borderColor: colors.error },
-  recordButtonDisabled: { opacity: 0.35 },
-  recordDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.surface },
-  recordDotActive: { width: 14, height: 14, borderRadius: 3 },
-  recordStatus: { fontSize: typography.sizes.label, color: colors.textSecondary },
-  recordStatusMuted: { color: colors.textTertiary },
+  instructionText: {
+    fontSize: typography.sizes.base,
+    lineHeight: typography.lineHeights.base,
+    color: colors.textTertiary,
+    textAlign: 'center',
+  },
 
-  error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center' },
-
-  responseSection: { gap: spacing.sm },
+  responseScroll: {
+    paddingTop: spacing.xxl * 3,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+  },
 
   card: {
     backgroundColor: DARK_SURFACE,
@@ -547,4 +420,26 @@ const styles = StyleSheet.create({
     minWidth: 40,
     textAlign: 'center',
   },
+
+  bottomBar: {
+    alignItems: 'center',
+    paddingBottom: spacing.xxl * 3,
+    paddingTop: spacing.md,
+    gap: spacing.sm,
+  },
+  error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center', paddingHorizontal: spacing.lg },
+  recordButton: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: DARK_CHIP,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: DARK_BORDER,
+  },
+  recordButtonDisabled: { opacity: 0.35 },
+  recordDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.surface },
+  recordDotActive: { width: 14, height: 14, borderRadius: 3 },
+  recordStatus: { fontSize: typography.sizes.label, color: colors.textTertiary },
 });

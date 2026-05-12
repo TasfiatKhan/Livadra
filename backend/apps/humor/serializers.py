@@ -30,6 +30,6 @@ class LiveRequestSerializer(serializers.Serializer):
 
 class LiveVoiceRequestSerializer(serializers.Serializer):
     audio = serializers.FileField()
-    relationship_context = serializers.ChoiceField(choices=RELATIONSHIP_CHOICES)
+    relationship_context = serializers.ChoiceField(choices=RELATIONSHIP_CHOICES, required=False, default='other')
     relationship_other = serializers.CharField(required=False, allow_blank=True, default='')
     environment = serializers.CharField(required=False, allow_blank=True, default='')
