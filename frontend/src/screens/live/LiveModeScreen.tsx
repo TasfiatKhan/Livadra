@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -18,26 +18,16 @@ import { AIOption, AIResponse } from '../../types/humor';
 import { LIVE_VOICE_PATH } from '../../services/humorService';
 import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import api from '../../services/api';
-import { colors, typography, spacing, radii } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { typography, spacing, radii } from '../../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'LiveMode'>;
 type RecordingState = 'idle' | 'recording' | 'processing';
-
-const DARK_BG = '#1A1A1A';
-const DARK_SURFACE = '#242424';
-const DARK_CHIP = '#2A2A2A';
-const DARK_BORDER = '#333';
 
 const OPTION_LABELS: Record<AIOption['type'], string> = {
   safe: 'Safe',
   playful: 'Playful',
   bold: 'Bold',
-};
-
-const OPTION_COLORS: Record<AIOption['type'], string> = {
-  safe: colors.safe,
-  playful: colors.playful,
-  bold: colors.bold,
 };
 
 const FEEDBACK_BUTTONS = [
@@ -48,6 +38,7 @@ const FEEDBACK_BUTTONS = [
 ] as const;
 
 export default function LiveModeScreen({ navigation }: Props) {
+  const { colors } = useTheme();
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [response, setResponse] = useState<AIResponse | null>(null);
@@ -62,6 +53,68 @@ export default function LiveModeScreen({ navigation }: Props) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
+
+  const styles = useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+    backBtn: { padding: spacing.sm, alignSelf: 'flex-start' as const },
+    backBtnText: { color: colors.textPrimary, fontSize: 28, fontWeight: typography.weights.bold },
+    content: { flex: 1, paddingHorizontal: spacing.md },
+    instructionWrap: {
+      position: 'absolute' as const,
+      top: 0, bottom: 0,
+      left: spacing.md, right: spacing.md,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    },
+    instructionText: {
+      fontSize: typography.sizes.base,
+      lineHeight: typography.lineHeights.base,
+      color: colors.textTertiary,
+      textAlign: 'center' as const,
+    },
+    responseScroll: { paddingTop: spacing.xxl * 3, paddingBottom: spacing.md, gap: spacing.sm },
+    card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.md, gap: spacing.sm, borderWidth: 1, borderColor: colors.border },
+    cardHeader: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const },
+    copyBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
+    copyBtnText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    copyBtnTextCopied: { color: colors.success, fontWeight: typography.weights.semibold },
+    optionText: { fontSize: typography.sizes.heading, lineHeight: typography.lineHeights.heading, color: colors.textPrimary, fontWeight: typography.weights.medium },
+    cardFooter: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, marginTop: spacing.xs },
+    typePill: { borderRadius: radii.full, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+    typePillText: { fontSize: typography.sizes.small, color: colors.surface, fontWeight: typography.weights.bold, letterSpacing: 0.4 },
+    revealRow: { flexDirection: 'row' as const, gap: spacing.md },
+    revealBtn: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    subText: { fontSize: typography.sizes.label, lineHeight: typography.lineHeights.label, color: colors.textSecondary, fontStyle: 'italic' as const },
+    feedbackRow: { flexDirection: 'row' as const, gap: spacing.xs, marginTop: spacing.xs, flexWrap: 'wrap' as const },
+    feedbackBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radii.full, backgroundColor: colors.surfaceSecondary },
+    feedbackBtnActive: { backgroundColor: colors.accent },
+    feedbackBtnSaved: { backgroundColor: colors.success },
+    feedbackLabel: { fontSize: typography.sizes.label },
+    navRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: spacing.lg, paddingVertical: spacing.xs },
+    navBtn: { padding: spacing.sm },
+    navArrow: { fontSize: 28, color: colors.textSecondary, lineHeight: 32 },
+    navArrowDisabled: { color: colors.border },
+    navCounter: { fontSize: typography.sizes.label, color: colors.textTertiary, minWidth: 40, textAlign: 'center' as const },
+    bottomBar: { alignItems: 'center' as const, paddingBottom: spacing.xxl * 3, paddingTop: spacing.md, gap: spacing.sm },
+    error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center' as const, paddingHorizontal: spacing.lg },
+    recordButton: {
+      width: 96, height: 96, borderRadius: 48,
+      backgroundColor: colors.surfaceSecondary,
+      alignItems: 'center' as const, justifyContent: 'center' as const,
+      borderWidth: 1.5, borderColor: colors.border,
+    },
+    recordButtonDisabled: { opacity: 0.35 },
+    recordDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.textPrimary },
+    recordDotActive: { width: 14, height: 14, borderRadius: 3 },
+    recordStatus: { fontSize: typography.sizes.label, color: colors.textTertiary },
+  }), [colors]);
+
+  const OPTION_COLORS: Record<AIOption['type'], string> = {
+    safe: colors.safe,
+    playful: colors.playful,
+    bold: colors.bold,
+  };
 
   useEffect(() => {
     setCopied(false);
@@ -179,13 +232,12 @@ export default function LiveModeScreen({ navigation }: Props) {
   const currentOption = response?.options[currentIndex];
 
   const recordStatus =
-    recordingState === 'recording' ? 'Tap to stop' :
+    recordingState === 'recording' ? 'Tap to finish' :
     recordingState === 'processing' ? 'Processing…' :
     'Tap to speak';
 
   return (
     <SafeAreaView style={styles.safe}>
-
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backBtnText}>←</Text>
@@ -202,10 +254,7 @@ export default function LiveModeScreen({ navigation }: Props) {
 
       <View style={styles.content}>
         {response && (
-          <ScrollView
-            contentContainerStyle={styles.responseScroll}
-            showsVerticalScrollIndicator={false}
-          >
+          <ScrollView contentContainerStyle={styles.responseScroll} showsVerticalScrollIndicator={false}>
             {currentOption && (
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
@@ -286,16 +335,13 @@ export default function LiveModeScreen({ navigation }: Props) {
         {error !== '' && <Text style={styles.error}>{error}</Text>}
         <Animated.View style={{ transform: [{ scale: pulseAnim }], opacity: pulseOpacity }}>
           <TouchableOpacity
-            style={[
-              styles.recordButton,
-              recordingState === 'processing' && styles.recordButtonDisabled,
-            ]}
+            style={[styles.recordButton, recordingState === 'processing' && styles.recordButtonDisabled]}
             onPress={toggleRecording}
             disabled={recordingState === 'processing'}
             activeOpacity={0.8}
           >
             {recordingState === 'processing' ? (
-              <ActivityIndicator color={colors.surface} size="small" />
+              <ActivityIndicator color={colors.textSecondary} size="small" />
             ) : (
               <View style={[styles.recordDot, recordingState === 'recording' && styles.recordDotActive]} />
             )}
@@ -303,143 +349,6 @@ export default function LiveModeScreen({ navigation }: Props) {
         </Animated.View>
         <Text style={styles.recordStatus}>{recordStatus}</Text>
       </View>
-
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: DARK_BG },
-
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  backBtn: { padding: spacing.sm, alignSelf: 'flex-start' },
-  backBtnText: { color: colors.surface, fontSize: 28, fontWeight: typography.weights.bold },
-
-  content: { flex: 1, paddingHorizontal: spacing.md },
-
-  instructionWrap: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: spacing.md,
-    right: spacing.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  instructionText: {
-    fontSize: typography.sizes.base,
-    lineHeight: typography.lineHeights.base,
-    color: colors.textTertiary,
-    textAlign: 'center',
-  },
-
-  responseScroll: {
-    paddingTop: spacing.xxl * 3,
-    paddingBottom: spacing.md,
-    gap: spacing.sm,
-  },
-
-  card: {
-    backgroundColor: DARK_SURFACE,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'flex-end' },
-  copyBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
-  copyBtnText: { fontSize: typography.sizes.label, color: colors.textTertiary },
-  copyBtnTextCopied: { color: colors.success, fontWeight: typography.weights.semibold },
-
-  optionText: {
-    fontSize: typography.sizes.heading,
-    lineHeight: typography.lineHeights.heading,
-    color: colors.surface,
-    fontWeight: typography.weights.medium,
-  },
-
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  typePill: {
-    borderRadius: radii.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-  },
-  typePillText: {
-    fontSize: typography.sizes.small,
-    color: colors.surface,
-    fontWeight: typography.weights.bold,
-    letterSpacing: 0.4,
-  },
-  revealRow: { flexDirection: 'row', gap: spacing.md },
-  revealBtn: { fontSize: typography.sizes.label, color: colors.textTertiary },
-
-  subText: {
-    fontSize: typography.sizes.label,
-    lineHeight: typography.lineHeights.label,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-  },
-
-  feedbackRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  feedbackBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.full,
-    backgroundColor: DARK_CHIP,
-  },
-  feedbackBtnActive: { backgroundColor: colors.accent },
-  feedbackBtnSaved: { backgroundColor: colors.success },
-  feedbackLabel: { fontSize: typography.sizes.label },
-
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.lg,
-    paddingVertical: spacing.xs,
-  },
-  navBtn: { padding: spacing.sm },
-  navArrow: { fontSize: 28, color: colors.textSecondary, lineHeight: 32 },
-  navArrowDisabled: { color: DARK_BORDER },
-  navCounter: {
-    fontSize: typography.sizes.label,
-    color: colors.textTertiary,
-    minWidth: 40,
-    textAlign: 'center',
-  },
-
-  bottomBar: {
-    alignItems: 'center',
-    paddingBottom: spacing.xxl * 3,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
-  },
-  error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center', paddingHorizontal: spacing.lg },
-  recordButton: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: DARK_CHIP,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: DARK_BORDER,
-  },
-  recordButtonDisabled: { opacity: 0.35 },
-  recordDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.surface },
-  recordDotActive: { width: 14, height: 14, borderRadius: 3 },
-  recordStatus: { fontSize: typography.sizes.label, color: colors.textTertiary },
-});

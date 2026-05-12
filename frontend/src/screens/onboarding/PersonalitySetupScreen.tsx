@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -20,7 +20,8 @@ import {
   CULTURAL_TONES,
   SOCIAL_ANXIETY_LEVELS,
 } from '../../constants/humor';
-import { colors, typography, spacing, radii, shadow } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { typography, spacing, radii, shadow } from '../../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'PersonalitySetup'>;
 
@@ -35,6 +36,15 @@ function ChipGroup({
   onSelect: (value: string) => void;
   disabled: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    chipGroup: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: spacing.sm },
+    chip: { borderWidth: 1.5, borderColor: colors.border, borderRadius: radii.full, paddingHorizontal: 14, paddingVertical: 7 },
+    chipSelected: { borderColor: colors.accent, backgroundColor: colors.accent },
+    chipText: { fontSize: typography.sizes.label, color: colors.textSecondary },
+    chipTextSelected: { color: colors.surface, fontWeight: typography.weights.semibold },
+  }), [colors]);
+
   return (
     <View style={styles.chipGroup}>
       {options.map(opt => {
@@ -58,6 +68,7 @@ function ChipGroup({
 
 export default function PersonalitySetupScreen({ navigation }: Props) {
   const { profile, isLoading, update } = useProfile();
+  const { colors } = useTheme();
 
   const [humorStyle, setHumorStyle] = useState('');
   const [personaType, setPersonaType] = useState('');
@@ -67,6 +78,46 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
   const [personalityDescription, setPersonalityDescription] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const styles = useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    centered: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const },
+    scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.sm },
+    title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, marginBottom: spacing.md, color: colors.textPrimary },
+    sectionLabel: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, marginTop: spacing.md, marginBottom: spacing.sm, color: colors.textPrimary },
+    textArea: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: typography.sizes.base,
+      minHeight: 100,
+      marginTop: spacing.xs,
+      color: colors.textPrimary,
+      backgroundColor: colors.surface,
+    },
+    error: { color: colors.error, fontSize: typography.sizes.label, marginTop: spacing.sm },
+    savedBanner: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      backgroundColor: colors.surfaceSecondary,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 12,
+      marginTop: spacing.xs,
+      marginBottom: spacing.sm,
+      ...shadow.card,
+    },
+    savedBannerText: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textPrimary },
+    savedBannerArrow: { fontSize: 20, color: colors.textTertiary },
+    button: { backgroundColor: colors.accent, borderRadius: radii.sm, paddingVertical: 14, alignItems: 'center' as const, marginTop: spacing.lg },
+    buttonDisabled: { opacity: 0.5 },
+    buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
+  }), [colors]);
 
   useEffect(() => {
     if (profile) {
@@ -113,64 +164,34 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>My Profile</Text>
 
-        <TouchableOpacity
-          style={styles.savedBanner}
-          onPress={() => navigation.navigate('SavedResponses')}
-        >
+        <TouchableOpacity style={styles.savedBanner} onPress={() => navigation.navigate('SavedResponses')}>
           <Text style={styles.savedBannerText}>💾 Saved responses</Text>
           <Text style={styles.savedBannerArrow}>›</Text>
         </TouchableOpacity>
 
         <Text style={styles.sectionLabel}>Humor Style</Text>
-        <ChipGroup
-          options={HUMOR_STYLES}
-          selected={humorStyle}
-          onSelect={setHumorStyle}
-          disabled={isSubmitting}
-        />
+        <ChipGroup options={HUMOR_STYLES} selected={humorStyle} onSelect={setHumorStyle} disabled={isSubmitting} />
 
         <Text style={styles.sectionLabel}>Persona</Text>
-        <ChipGroup
-          options={PERSONA_TYPES}
-          selected={personaType}
-          onSelect={setPersonaType}
-          disabled={isSubmitting}
-        />
+        <ChipGroup options={PERSONA_TYPES} selected={personaType} onSelect={setPersonaType} disabled={isSubmitting} />
 
         <Text style={styles.sectionLabel}>Confidence Level</Text>
-        <ChipGroup
-          options={CONFIDENCE_LEVELS}
-          selected={confidenceLevel}
-          onSelect={setConfidenceLevel}
-          disabled={isSubmitting}
-        />
+        <ChipGroup options={CONFIDENCE_LEVELS} selected={confidenceLevel} onSelect={setConfidenceLevel} disabled={isSubmitting} />
 
         <Text style={styles.sectionLabel}>Cultural Tone</Text>
-        <ChipGroup
-          options={CULTURAL_TONES}
-          selected={culturalTone}
-          onSelect={setCulturalTone}
-          disabled={isSubmitting}
-        />
+        <ChipGroup options={CULTURAL_TONES} selected={culturalTone} onSelect={setCulturalTone} disabled={isSubmitting} />
 
         <Text style={styles.sectionLabel}>Social anxiety</Text>
-        <ChipGroup
-          options={SOCIAL_ANXIETY_LEVELS}
-          selected={socialAnxietyLevel}
-          onSelect={setSocialAnxietyLevel}
-          disabled={isSubmitting}
-        />
+        <ChipGroup options={SOCIAL_ANXIETY_LEVELS} selected={socialAnxietyLevel} onSelect={setSocialAnxietyLevel} disabled={isSubmitting} />
 
         <Text style={styles.sectionLabel}>About you</Text>
         <TextInput
           style={styles.textArea}
           placeholder="Describe your humor style and personality in your own words…"
+          placeholderTextColor={colors.textTertiary}
           value={personalityDescription}
           onChangeText={setPersonalityDescription}
           multiline
@@ -186,101 +207,9 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
           onPress={handleSubmit}
           disabled={isSubmitting}
         >
-          <Text style={styles.buttonText}>
-            {isSubmitting ? 'Saving…' : buttonLabel}
-          </Text>
+          <Text style={styles.buttonText}>{isSubmitting ? 'Saving…' : buttonLabel}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xxl,
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: typography.sizes.title,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.md,
-  },
-  sectionLabel: {
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.semibold,
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  chipGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  chip: {
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radii.full,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  chipSelected: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accent,
-  },
-  chipText: {
-    fontSize: typography.sizes.label,
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
-    color: colors.surface,
-    fontWeight: typography.weights.semibold,
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: typography.sizes.base,
-    minHeight: 100,
-    marginTop: spacing.xs,
-  },
-  error: {
-    color: colors.error,
-    fontSize: typography.sizes.label,
-    marginTop: spacing.sm,
-  },
-  savedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.surfaceSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm,
-    ...shadow.card,
-  },
-  savedBannerText: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textPrimary },
-  savedBannerArrow: { fontSize: 20, color: colors.textTertiary },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.sm,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-  },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: {
-    color: colors.surface,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.semibold,
-  },
-});

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,26 +22,16 @@ import { submitFeedback, saveResponse, trackCopy } from '../../services/response
 import { MomentDetail, MomentMessage } from '../../types/moments';
 import { AIOption, AIResponse } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
-import { colors, typography, spacing, radii, shadow } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { typography, spacing, radii, shadow } from '../../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'MomentDetail'>;
 type RecordingState = 'idle' | 'recording' | 'processing';
-
-const MODE_OPTIONS = [
-  { value: 'texting' as const, label: 'Texting' },
-  { value: 'live' as const, label: 'Live' },
-];
 
 const OPTION_LABELS: Record<AIOption['type'], string> = {
   safe: 'Safe',
   playful: 'Playful',
   bold: 'Bold',
-};
-
-const OPTION_COLORS: Record<AIOption['type'], string> = {
-  safe: colors.safe,
-  playful: colors.playful,
-  bold: colors.bold,
 };
 
 const MOMENT_FEEDBACK_BUTTONS = [
@@ -52,6 +42,87 @@ const MOMENT_FEEDBACK_BUTTONS = [
 ] as const;
 
 export default function MomentDetailScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const OPTION_COLORS: Record<AIOption['type'], string> = { safe: colors.safe, playful: colors.playful, bold: colors.bold };
+
+  const styles = useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    flex: { flex: 1 },
+    centered: { flex: 1, alignItems: 'center' as const, justifyContent: 'center' as const },
+    formScroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xxl, gap: spacing.sm },
+    backBtn: { paddingVertical: spacing.xs, paddingRight: 12 },
+    backBtnText: { fontSize: typography.sizes.base, color: colors.textSecondary },
+    title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, marginBottom: spacing.sm, color: colors.textPrimary },
+    label: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, marginTop: 12, marginBottom: 6, color: colors.textPrimary },
+    optionalHint: { fontWeight: typography.weights.regular, color: colors.textTertiary, fontSize: typography.sizes.label },
+    chipGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: spacing.sm },
+    chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.full, paddingHorizontal: 14, paddingVertical: spacing.sm, backgroundColor: colors.surfaceSecondary },
+    chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    chipText: { fontSize: typography.sizes.label, color: colors.textSecondary },
+    chipTextSelected: { color: colors.surface, fontWeight: typography.weights.semibold },
+    input: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, paddingHorizontal: 14, paddingVertical: 12, fontSize: typography.sizes.base, color: colors.textPrimary, backgroundColor: colors.surface },
+    textArea: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, paddingHorizontal: 14, paddingVertical: 12, fontSize: typography.sizes.base, minHeight: 120, color: colors.textPrimary, backgroundColor: colors.surface },
+    button: { backgroundColor: colors.accent, borderRadius: radii.sm, paddingVertical: 14, alignItems: 'center' as const, marginTop: spacing.md },
+    buttonDisabled: { opacity: 0.4 },
+    buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
+    error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center' as const, marginTop: spacing.sm },
+    dividerRow: { flexDirection: 'row' as const, alignItems: 'center' as const, marginTop: 20, gap: 10 },
+    dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+    dividerText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    recordSection: { alignItems: 'center' as const, marginTop: spacing.md, marginBottom: spacing.sm, gap: 12 },
+    recordButton: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.textPrimary, alignItems: 'center' as const, justifyContent: 'center' as const },
+    recordButtonActive: { backgroundColor: colors.error },
+    recordButtonDisabled: { opacity: 0.35 },
+    recordDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.surface },
+    recordLabel: { fontSize: typography.sizes.label, color: colors.textSecondary, textAlign: 'center' as const },
+    recordLabelMuted: { color: colors.textTertiary },
+    threadHeader: { flexDirection: 'row' as const, alignItems: 'center' as const, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.sm },
+    threadTitle: { flex: 1, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textPrimary },
+    exchangeCount: { fontSize: typography.sizes.small, color: colors.textTertiary, flexShrink: 0 },
+    archiveBtn: { paddingHorizontal: 10, paddingVertical: spacing.xs, marginLeft: spacing.xs },
+    archiveBtnText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    threadScroll: { paddingHorizontal: spacing.md, paddingTop: 12, paddingBottom: spacing.md, gap: 12 },
+    userBubbleRow: { alignItems: 'flex-end' as const },
+    userBubble: { backgroundColor: colors.accent, borderRadius: radii.lg, borderBottomRightRadius: spacing.xs, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '85%' as const },
+    userBubbleText: { color: colors.surface, fontSize: typography.sizes.base, lineHeight: 22 },
+    assistantCard: { backgroundColor: colors.surfaceSecondary, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: 14, gap: spacing.sm, ...shadow.card },
+    optionPill: { alignSelf: 'flex-start' as const, borderRadius: radii.full, paddingHorizontal: 10, paddingVertical: 3 },
+    optionPillText: { color: colors.surface, fontSize: 11, fontWeight: typography.weights.bold, letterSpacing: 0.4 },
+    optionText: { fontSize: typography.sizes.base, lineHeight: 22, color: colors.textPrimary, fontWeight: typography.weights.medium },
+    optionNote: { fontSize: typography.sizes.label, color: colors.textTertiary, fontStyle: 'italic' as const },
+    cardNav: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: spacing.md, marginTop: spacing.xs },
+    navArrow: { padding: spacing.xs },
+    navArrowText: { fontSize: 26, color: colors.textSecondary, lineHeight: 30 },
+    navArrowDisabled: { color: colors.textTertiary },
+    navCounter: { fontSize: typography.sizes.label, color: colors.textTertiary, minWidth: 40, textAlign: 'center' as const },
+    copyButton: { alignSelf: 'flex-end' as const, paddingVertical: 2, paddingHorizontal: 2 },
+    copyButtonText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    copyButtonTextCopied: { color: colors.success, fontWeight: typography.weights.semibold },
+    deliveryToggle: { alignItems: 'center' as const, paddingVertical: 6 },
+    deliveryToggleText: { fontSize: typography.sizes.label, color: colors.accent },
+    deliveryCard: { backgroundColor: colors.accentSoft, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border, padding: 12 },
+    deliveryText: { fontSize: typography.sizes.label, lineHeight: typography.lineHeights.label, color: colors.textSecondary },
+    feedbackRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, marginTop: spacing.xs },
+    feedbackBtn: { borderRadius: radii.lg, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceSecondary },
+    feedbackBtnActive: { backgroundColor: colors.textPrimary },
+    feedbackBtnSaved: { backgroundColor: colors.success },
+    feedbackBtnText: { fontSize: 11, color: colors.textSecondary },
+    feedbackBtnTextActive: { color: colors.surface, fontWeight: typography.weights.semibold },
+    coachingCard: { backgroundColor: colors.accentSoft, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, alignItems: 'center' as const },
+    coachingText: { fontSize: typography.sizes.label, color: colors.accent, fontStyle: 'italic' as const, textAlign: 'center' as const },
+    archivedBanner: { padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center' as const, gap: 6 },
+    archivedText: { fontSize: typography.sizes.label, color: colors.textTertiary, textAlign: 'center' as const },
+    archivedLink: { fontSize: typography.sizes.label, color: colors.accent, fontWeight: typography.weights.semibold },
+    continueBar: { flexDirection: 'row' as const, alignItems: 'flex-end' as const, padding: 12, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.sm },
+    continueRecordBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.textSecondary, alignItems: 'center' as const, justifyContent: 'center' as const, flexShrink: 0 },
+    continueRecordBtnActive: { backgroundColor: colors.error },
+    continueRecordBtnDisabled: { opacity: 0.35 },
+    continueRecordDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.surface },
+    continueInput: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radii.full, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: typography.sizes.base, maxHeight: 100, color: colors.textPrimary, backgroundColor: colors.surface },
+    sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accent, alignItems: 'center' as const, justifyContent: 'center' as const },
+    sendBtnDisabled: { opacity: 0.35 },
+    sendBtnText: { color: colors.surface, fontSize: 20, fontWeight: typography.weights.semibold },
+  }), [colors]);
   const [localMomentId, setLocalMomentId] = useState<number | null>(route.params.momentId);
   const [moment, setMoment] = useState<MomentDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,8 +131,6 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
   // Creation form state
   const [relContext, setRelContext] = useState('');
   const [relOther, setRelOther] = useState('');
-  const [selectedMode, setSelectedMode] = useState<'texting' | 'live'>('texting');
-  const [environment, setEnvironment] = useState('');
   const [initialInput, setInitialInput] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -103,8 +172,6 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
     const formData = new FormData();
     formData.append('relationship_context', relContext);
     if (relOther.trim()) formData.append('relationship_other', relOther.trim());
-    formData.append('mode', selectedMode);
-    if (environment.trim()) formData.append('environment', environment.trim());
     return formData;
   };
 
@@ -193,13 +260,14 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
           const { data } = await continueMoment(localMomentId, formData);
           setMoment(prev => {
             if (!prev) return prev;
+            const assistantContent = JSON.stringify({ options: data.options, delivery: data.delivery, coaching: (data as any).coaching ?? false });
             return {
               ...prev,
               is_archived: data.is_archived,
               messages: [
                 ...prev.messages,
-                { id: Date.now(), role: 'user', content: data.user_input, response_record_id: null, created_at: new Date().toISOString() },
-                { id: Date.now() + 1, role: 'assistant', content: JSON.stringify({ options: data.options, delivery: data.delivery }), response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
+                { id: Date.now(), role: 'user', content: data.user_input || '(no speech captured)', response_record_id: null, created_at: new Date().toISOString() },
+                { id: Date.now() + 1, role: 'assistant', content: assistantContent, response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
               ],
             };
           });
@@ -343,43 +411,18 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
               <TextInput
                 style={[styles.input, { marginTop: 8 }]}
                 placeholder="Describe the relationship…"
+                placeholderTextColor={colors.textTertiary}
                 value={relOther}
                 onChangeText={setRelOther}
                 editable={!formBusy}
               />
             )}
 
-            <Text style={styles.label}>Mode</Text>
-            <View style={styles.chipGrid}>
-              {MODE_OPTIONS.map(opt => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[styles.chip, selectedMode === opt.value && styles.chipSelected]}
-                  onPress={() => setSelectedMode(opt.value)}
-                  disabled={formBusy}
-                >
-                  <Text style={[styles.chipText, selectedMode === opt.value && styles.chipTextSelected]}>
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.label}>
-              What's the vibe? <Text style={styles.optionalHint}>(optional)</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Late night, we've been texting for a week"
-              value={environment}
-              onChangeText={setEnvironment}
-              editable={!formBusy}
-            />
-
-            <Text style={styles.label}>What's the situation?</Text>
+            <Text style={styles.label}>What's the situation and what do you need?</Text>
             <TextInput
               style={styles.textArea}
               placeholder="e.g. We matched on Hinge 3 days ago, been flirting. She just sent a voice note saying I seem interesting and asked what I do for fun."
+              placeholderTextColor={colors.textTertiary}
               value={initialInput}
               onChangeText={setInitialInput}
               multiline
@@ -484,8 +527,17 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
               );
             }
 
-            let parsed: AIResponse;
+            let parsed: AIResponse & { coaching?: boolean };
             try { parsed = JSON.parse(msg.content); } catch { return null; }
+
+            if (parsed.coaching) {
+              return (
+                <View key={msg.id} style={styles.coachingCard}>
+                  <Text style={styles.coachingText}>{parsed.options[0]?.text}</Text>
+                </View>
+              );
+            }
+
             const cIdx = cardIndices[idx] ?? 0;
             const opt = parsed.options[cIdx];
             if (!opt) return null;
@@ -595,6 +647,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
             <TextInput
               style={styles.continueInput}
               placeholder="What happened next?"
+              placeholderTextColor={colors.textTertiary}
               value={newInput}
               onChangeText={setNewInput}
               editable={!isContinuing && recordingState === 'idle'}
@@ -617,206 +670,3 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  flex: { flex: 1 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-
-  // Creation form
-  formScroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xxl, gap: spacing.sm },
-  backBtn: { paddingVertical: spacing.xs, paddingRight: 12 },
-  backBtnText: { fontSize: typography.sizes.base, color: colors.textSecondary },
-  title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, marginBottom: spacing.sm },
-  label: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, marginTop: 12, marginBottom: 6 },
-  optionalHint: { fontWeight: typography.weights.regular, color: colors.textTertiary, fontSize: typography.sizes.label },
-  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.full,
-    paddingHorizontal: 14,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceSecondary,
-  },
-  chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
-  chipText: { fontSize: typography.sizes.label, color: colors.textSecondary },
-  chipTextSelected: { color: colors.surface, fontWeight: typography.weights.semibold },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: typography.sizes.base,
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: typography.sizes.base,
-    minHeight: 120,
-  },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.sm,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonDisabled: { opacity: 0.4 },
-  buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
-  error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center', marginTop: spacing.sm },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    gap: 10,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { fontSize: typography.sizes.label, color: colors.textTertiary },
-  recordSection: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-    gap: 12,
-  },
-  recordButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.textPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recordButtonActive: { backgroundColor: colors.error },
-  recordButtonDisabled: { opacity: 0.35 },
-  recordDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.surface },
-  recordLabel: { fontSize: typography.sizes.label, color: colors.textSecondary, textAlign: 'center' },
-  recordLabelMuted: { color: colors.textTertiary },
-
-  // Thread
-  threadHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceSecondary,
-    gap: spacing.sm,
-  },
-  threadTitle: { flex: 1, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textPrimary },
-  exchangeCount: { fontSize: typography.sizes.small, color: colors.textTertiary, flexShrink: 0 },
-  archiveBtn: { paddingHorizontal: 10, paddingVertical: spacing.xs, marginLeft: spacing.xs },
-  archiveBtnText: { fontSize: typography.sizes.label, color: colors.textTertiary },
-  threadScroll: { paddingHorizontal: spacing.md, paddingTop: 12, paddingBottom: spacing.md, gap: 12 },
-  userBubbleRow: { alignItems: 'flex-end' },
-  userBubble: {
-    backgroundColor: colors.textPrimary,
-    borderRadius: radii.lg,
-    borderBottomRightRadius: spacing.xs,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    maxWidth: '85%',
-  },
-  userBubbleText: { color: colors.surface, fontSize: typography.sizes.base, lineHeight: 22 },
-  assistantCard: {
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-    gap: spacing.sm,
-    ...shadow.card,
-  },
-  optionPill: {
-    alignSelf: 'flex-start',
-    borderRadius: radii.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  optionPillText: { color: colors.surface, fontSize: 11, fontWeight: typography.weights.bold, letterSpacing: 0.4 },
-  optionText: { fontSize: typography.sizes.base, lineHeight: 22, color: colors.textPrimary, fontWeight: typography.weights.medium },
-  optionNote: { fontSize: typography.sizes.label, color: colors.textTertiary, fontStyle: 'italic' },
-  cardNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    marginTop: spacing.xs,
-  },
-  navArrow: { padding: spacing.xs },
-  navArrowText: { fontSize: 26, color: colors.textSecondary, lineHeight: 30 },
-  navArrowDisabled: { color: colors.textTertiary },
-  navCounter: { fontSize: typography.sizes.label, color: colors.textTertiary, minWidth: 40, textAlign: 'center' },
-  copyButton: { alignSelf: 'flex-end', paddingVertical: 2, paddingHorizontal: 2 },
-  copyButtonText: { fontSize: typography.sizes.label, color: colors.textTertiary },
-  copyButtonTextCopied: { color: colors.success, fontWeight: typography.weights.semibold },
-  deliveryToggle: { alignItems: 'center', paddingVertical: 6 },
-  deliveryToggleText: { fontSize: typography.sizes.label, color: colors.accent },
-  deliveryCard: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-  },
-  deliveryText: { fontSize: typography.sizes.label, lineHeight: typography.lineHeights.label, color: colors.textSecondary },
-  feedbackRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.xs },
-  feedbackBtn: { borderRadius: radii.lg, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceSecondary },
-  feedbackBtnActive: { backgroundColor: colors.textPrimary },
-  feedbackBtnSaved: { backgroundColor: colors.success },
-  feedbackBtnText: { fontSize: 11, color: colors.textSecondary },
-  feedbackBtnTextActive: { color: colors.surface, fontWeight: typography.weights.semibold },
-  archivedBanner: {
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceSecondary,
-    alignItems: 'center',
-    gap: 6,
-  },
-  archivedText: { fontSize: typography.sizes.label, color: colors.textTertiary, textAlign: 'center' },
-  archivedLink: { fontSize: typography.sizes.label, color: colors.accent, fontWeight: typography.weights.semibold },
-  continueBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceSecondary,
-    gap: spacing.sm,
-  },
-  continueRecordBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.textSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  continueRecordBtnActive: { backgroundColor: colors.error },
-  continueRecordBtnDisabled: { opacity: 0.35 },
-  continueRecordDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.surface },
-  continueInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    fontSize: typography.sizes.base,
-    maxHeight: 100,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendBtnDisabled: { opacity: 0.35 },
-  sendBtnText: { color: colors.surface, fontSize: 20, fontWeight: typography.weights.semibold },
-});

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -14,7 +14,8 @@ import { MainStackParamList } from '../../navigation/types';
 import { listMoments } from '../../services/momentsService';
 import { Moment } from '../../types/moments';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
-import { colors, typography, spacing, radii, shadow } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { typography, spacing, radii, shadow } from '../../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Moments'>;
 
@@ -33,9 +34,70 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function MomentsScreen({ navigation }: Props) {
+  const { colors } = useTheme();
   const [moments, setMoments] = useState<Moment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+
+  const styles = useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    topBar: {
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.xs,
+    },
+    backBtn: { padding: spacing.sm, alignSelf: 'flex-start' as const },
+    backBtnText: { color: colors.textPrimary, fontSize: 28, fontWeight: typography.weights.bold },
+    header: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xs,
+      paddingBottom: 12,
+    },
+    title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, color: colors.textPrimary },
+    newBtn: {
+      backgroundColor: colors.accent,
+      borderRadius: radii.full,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    newBtnText: { color: colors.surface, fontWeight: typography.weights.semibold, fontSize: typography.sizes.label },
+    toggle: {
+      flexDirection: 'row' as const,
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      backgroundColor: colors.surfaceSecondary,
+      borderRadius: 10,
+      padding: 3,
+    },
+    toggleOption: { flex: 1, paddingVertical: 7, alignItems: 'center' as const, borderRadius: radii.sm },
+    toggleOptionActive: { backgroundColor: colors.surface },
+    toggleText: { fontSize: typography.sizes.label, fontWeight: typography.weights.medium, color: colors.textTertiary },
+    toggleTextActive: { color: colors.textPrimary, fontWeight: typography.weights.semibold },
+    centered: { flex: 1, alignItems: 'center' as const, justifyContent: 'center' as const, gap: spacing.sm },
+    emptyText: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textSecondary },
+    emptySubtext: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: 12 },
+    card: {
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 14,
+      padding: spacing.md,
+      backgroundColor: colors.surfaceSecondary,
+      gap: 10,
+      ...shadow.card,
+    },
+    cardArchived: { opacity: 0.6 },
+    cardTop: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-start' as const, gap: spacing.sm },
+    cardTitle: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textPrimary, flex: 1 },
+    cardTime: { fontSize: typography.sizes.small, color: colors.textTertiary, flexShrink: 0 },
+    cardBottom: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
+    relChip: { backgroundColor: colors.border, borderRadius: radii.md, paddingHorizontal: 10, paddingVertical: spacing.xs },
+    relChipText: { fontSize: typography.sizes.small, color: colors.textSecondary },
+    exchangeCount: { fontSize: typography.sizes.small, color: colors.textTertiary },
+  }), [colors]);
 
   useFocusEffect(
     useCallback(() => {
@@ -54,6 +116,12 @@ export default function MomentsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>←</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.header}>
         <Text style={styles.title}>Moments</Text>
         {!showArchived && (
@@ -117,80 +185,6 @@ export default function MomentsScreen({ navigation }: Props) {
           ))}
         </ScrollView>
       )}
-
-      <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()}>
-        <Text style={styles.backLinkText}>← Home</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: 12,
-  },
-  title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold },
-  newBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  newBtnText: { color: colors.surface, fontWeight: typography.weights.semibold, fontSize: typography.sizes.label },
-  toggle: {
-    flexDirection: 'row',
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: 10,
-    padding: 3,
-  },
-  toggleOption: {
-    flex: 1,
-    paddingVertical: 7,
-    alignItems: 'center',
-    borderRadius: radii.sm,
-  },
-  toggleOptionActive: { backgroundColor: colors.surface },
-  toggleText: { fontSize: typography.sizes.label, fontWeight: typography.weights.medium, color: colors.textTertiary },
-  toggleTextActive: { color: colors.textPrimary, fontWeight: typography.weights.semibold },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
-  emptyText: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textSecondary },
-  emptySubtext: { fontSize: typography.sizes.label, color: colors.textTertiary },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: 12 },
-  card: {
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: spacing.md,
-    backgroundColor: colors.surfaceSecondary,
-    gap: 10,
-    ...shadow.card,
-  },
-  cardArchived: { opacity: 0.6 },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  cardTitle: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textPrimary, flex: 1 },
-  cardTime: { fontSize: typography.sizes.small, color: colors.textTertiary, flexShrink: 0 },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  relChip: {
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: radii.md,
-    paddingHorizontal: 10,
-    paddingVertical: spacing.xs,
-  },
-  relChipText: { fontSize: typography.sizes.small, color: colors.textSecondary },
-  exchangeCount: { fontSize: typography.sizes.small, color: colors.textTertiary },
-  backLink: { alignItems: 'center', paddingVertical: spacing.md },
-  backLinkText: { color: colors.textTertiary, fontSize: typography.sizes.label, textDecorationLine: 'underline' },
-});

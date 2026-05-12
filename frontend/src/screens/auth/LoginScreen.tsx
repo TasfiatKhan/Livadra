@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,7 +12,8 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
-import { colors, typography, spacing, radii } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { typography, spacing, radii } from '../../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -27,10 +28,34 @@ function extractError(err: unknown): string {
 
 export default function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
+  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const styles = useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    flex: { flex: 1 },
+    container: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, gap: 12 },
+    title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, marginBottom: spacing.sm, color: colors.textPrimary },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: typography.sizes.base,
+      color: colors.textPrimary,
+      backgroundColor: colors.surface,
+    },
+    error: { color: colors.error, fontSize: typography.sizes.label },
+    button: { backgroundColor: colors.accent, borderRadius: radii.sm, paddingVertical: 14, alignItems: 'center' as const, marginTop: spacing.xs },
+    buttonDisabled: { opacity: 0.5 },
+    buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
+    link: { textAlign: 'center' as const, color: colors.textTertiary, fontSize: typography.sizes.label, marginTop: spacing.sm },
+    linkBold: { fontWeight: typography.weights.bold, color: colors.textPrimary },
+  }), [colors]);
 
   const handleLogin = async () => {
     setError('');
@@ -46,16 +71,14 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.container}>
           <Text style={styles.title}>Welcome back</Text>
 
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor={colors.textTertiary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -66,6 +89,7 @@ export default function LoginScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Password"
+            placeholderTextColor={colors.textTertiary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -92,56 +116,3 @@ export default function LoginScreen({ navigation }: Props) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  flex: { flex: 1 },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: 12,
-  },
-  title: {
-    fontSize: typography.sizes.title,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: typography.sizes.base,
-  },
-  error: {
-    color: colors.error,
-    fontSize: typography.sizes.label,
-  },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.sm,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: colors.surface,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.semibold,
-  },
-  link: {
-    textAlign: 'center',
-    color: colors.textTertiary,
-    fontSize: typography.sizes.label,
-    marginTop: spacing.sm,
-  },
-  linkBold: {
-    fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
-  },
-});

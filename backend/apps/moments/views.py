@@ -175,6 +175,25 @@ class MomentContinueView(APIView):
         else:
             user_input = vd['new_input'].strip()
 
+        # Empty transcription — save a coaching exchange without calling AI
+        if len(user_input.strip()) < 10:
+            coaching_data = {
+                'options': [{'type': 'safe', 'text': 'Tap to speak clearly and in detail.', 'note': ''}],
+                'delivery': '',
+                'coaching': True,
+            }
+            MomentMessage.objects.create(moment=moment, role=MomentMessage.Role.USER, content='(no speech captured)')
+            MomentMessage.objects.create(
+                moment=moment,
+                role=MomentMessage.Role.ASSISTANT,
+                content=json.dumps(coaching_data),
+                response_record_id=None,
+            )
+            if moment.messages.count() >= MESSAGE_CAP:
+                moment.is_archived = True
+            moment.save()
+            return Response({**coaching_data, 'is_archived': moment.is_archived, 'record_id': None, 'user_input': ''})
+
         # Capture history before adding the new user message
         history = list(moment.messages.order_by('created_at').values('role', 'content'))
 

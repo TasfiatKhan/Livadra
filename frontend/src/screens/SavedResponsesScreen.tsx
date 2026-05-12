@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,7 +12,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../navigation/types';
 import { getSavedResponses, SavedResponseItem } from '../services/responsesService';
-import { colors, typography, spacing, radii, shadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { typography, spacing, radii, shadow } from '../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'SavedResponses'>;
 
@@ -20,12 +21,6 @@ const OPTION_LABELS: Record<SavedResponseItem['option_type'], string> = {
   safe: 'Safe',
   playful: 'Playful',
   bold: 'Bold',
-};
-
-const OPTION_COLORS: Record<SavedResponseItem['option_type'], string> = {
-  safe: colors.safe,
-  playful: colors.playful,
-  bold: colors.bold,
 };
 
 const MODE_LABELS: Record<string, string> = {
@@ -45,11 +40,23 @@ function timeAgo(iso: string): string {
 }
 
 function SavedCard({ item }: { item: SavedResponseItem }) {
-  const color = OPTION_COLORS[item.option_type];
+  const { colors } = useTheme();
+  const OPTION_COLORS = { safe: colors.safe, playful: colors.playful, bold: colors.bold };
+  const styles = useMemo(() => StyleSheet.create({
+    card: { backgroundColor: colors.surfaceSecondary, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, padding: 14, gap: spacing.sm, ...shadow.card },
+    cardHeader: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.sm, flexWrap: 'wrap' as const },
+    pill: { borderRadius: radii.full, paddingHorizontal: 10, paddingVertical: 3 },
+    pillText: { color: colors.surface, fontSize: 11, fontWeight: typography.weights.bold, letterSpacing: 0.4 },
+    meta: { fontSize: typography.sizes.small, color: colors.textTertiary, flex: 1 },
+    timestamp: { fontSize: 11, color: colors.textTertiary },
+    situation: { fontSize: typography.sizes.label, color: colors.textTertiary, fontStyle: 'italic' as const, lineHeight: 18 },
+    optionText: { fontSize: typography.sizes.base, lineHeight: 22, color: colors.textPrimary, fontWeight: typography.weights.medium },
+  }), [colors]);
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <View style={[styles.pill, { backgroundColor: color }]}>
+        <View style={[styles.pill, { backgroundColor: OPTION_COLORS[item.option_type] }]}>
           <Text style={styles.pillText}>{OPTION_LABELS[item.option_type]}</Text>
         </View>
         <Text style={styles.meta}>
@@ -67,9 +74,30 @@ function SavedCard({ item }: { item: SavedResponseItem }) {
 }
 
 export default function SavedResponsesScreen({ navigation }: Props) {
+  const { colors } = useTheme();
   const [items, setItems] = useState<SavedResponseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const styles = useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    header: {
+      paddingHorizontal: 20,
+      paddingTop: spacing.md,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      gap: spacing.xs,
+    },
+    backBtn: { paddingBottom: spacing.xs },
+    backBtnText: { fontSize: typography.sizes.base, color: colors.textSecondary },
+    title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, color: colors.textPrimary },
+    centered: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, padding: spacing.lg },
+    error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center' as const },
+    empty: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textSecondary, textAlign: 'center' as const },
+    emptySub: { fontSize: typography.sizes.label, color: colors.textTertiary, textAlign: 'center' as const, marginTop: spacing.sm },
+    list: { paddingHorizontal: spacing.md, paddingTop: 12, paddingBottom: spacing.xxl, gap: 12 },
+  }), [colors]);
 
   useFocusEffect(
     useCallback(() => {
@@ -109,7 +137,7 @@ export default function SavedResponsesScreen({ navigation }: Props) {
       ) : items.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.empty}>No saved responses yet.</Text>
-          <Text style={styles.emptySub}>Tap 💾 Save on any suggestion to save it here.</Text>
+          <Text style={styles.emptySub}>Tap Save on any suggestion to save it here.</Text>
         </View>
       ) : (
         <FlatList
@@ -122,48 +150,3 @@ export default function SavedResponsesScreen({ navigation }: Props) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: spacing.md,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceSecondary,
-    gap: spacing.xs,
-  },
-  backBtn: { paddingBottom: spacing.xs },
-  backBtnText: { fontSize: typography.sizes.base, color: colors.textSecondary },
-  title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, color: colors.textPrimary },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
-  error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center' },
-  empty: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textSecondary, textAlign: 'center' },
-  emptySub: { fontSize: typography.sizes.label, color: colors.textTertiary, textAlign: 'center', marginTop: spacing.sm },
-  list: { paddingHorizontal: spacing.md, paddingTop: 12, paddingBottom: spacing.xxl, gap: 12 },
-  card: {
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-    gap: spacing.sm,
-    ...shadow.card,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  pill: {
-    borderRadius: radii.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  pillText: { color: colors.surface, fontSize: 11, fontWeight: typography.weights.bold, letterSpacing: 0.4 },
-  meta: { fontSize: typography.sizes.small, color: colors.textTertiary, flex: 1 },
-  timestamp: { fontSize: 11, color: colors.textTertiary },
-  situation: { fontSize: typography.sizes.label, color: colors.textTertiary, fontStyle: 'italic', lineHeight: 18 },
-  optionText: { fontSize: typography.sizes.base, lineHeight: 22, color: colors.textPrimary, fontWeight: typography.weights.medium },
-});

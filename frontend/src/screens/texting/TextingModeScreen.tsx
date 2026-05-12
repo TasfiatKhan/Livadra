@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -19,7 +19,8 @@ import { TEXTING_PATH } from '../../services/humorService';
 import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import { AIOption } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
-import { colors, typography, spacing, radii, shadow } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { typography, spacing, radii, shadow } from '../../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'TextingMode'>;
 
@@ -27,12 +28,6 @@ const OPTION_LABELS: Record<AIOption['type'], string> = {
   safe: 'Safe',
   playful: 'Playful',
   bold: 'Bold',
-};
-
-const OPTION_COLORS: Record<AIOption['type'], string> = {
-  safe: colors.safe,
-  playful: colors.playful,
-  bold: colors.bold,
 };
 
 const FEEDBACK_BUTTONS = [
@@ -52,8 +47,26 @@ type OptionCardProps = {
 };
 
 function OptionCard({ option, recordId, feedbackGiven, isSaved, onFeedback, onSave }: OptionCardProps) {
+  const { colors } = useTheme();
+  const OPTION_COLORS = { safe: colors.safe, playful: colors.playful, bold: colors.bold };
   const [copied, setCopied] = useState(false);
-  const color = OPTION_COLORS[option.type];
+
+  const styles = useMemo(() => StyleSheet.create({
+    optionCard: { padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, gap: 10, ...shadow.card },
+    optionPill: { alignSelf: 'flex-start' as const, borderRadius: radii.full, paddingHorizontal: 12, paddingVertical: spacing.xs },
+    optionPillText: { color: colors.surface, fontSize: typography.sizes.small, fontWeight: typography.weights.bold, letterSpacing: 0.5 },
+    optionText: { fontSize: typography.sizes.base, lineHeight: typography.lineHeights.base, color: colors.textPrimary, fontWeight: typography.weights.medium },
+    optionNote: { fontSize: typography.sizes.label, lineHeight: typography.lineHeights.label, color: colors.textTertiary, fontStyle: 'italic' as const },
+    copyButton: { alignSelf: 'flex-end' as const, paddingVertical: spacing.xs, paddingHorizontal: 2 },
+    copyButtonText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    copyButtonTextCopied: { color: colors.success, fontWeight: typography.weights.semibold },
+    feedbackRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, marginTop: spacing.xs },
+    feedbackBtn: { borderRadius: radii.lg, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceSecondary },
+    feedbackBtnActive: { backgroundColor: colors.textPrimary },
+    feedbackBtnSaved: { backgroundColor: colors.success },
+    feedbackBtnText: { fontSize: typography.sizes.small, color: colors.textSecondary },
+    feedbackBtnTextActive: { color: colors.surface, fontWeight: typography.weights.semibold },
+  }), [colors]);
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(option.text);
@@ -66,7 +79,7 @@ function OptionCard({ option, recordId, feedbackGiven, isSaved, onFeedback, onSa
 
   return (
     <View style={styles.optionCard}>
-      <View style={[styles.optionPill, { backgroundColor: color }]}>
+      <View style={[styles.optionPill, { backgroundColor: OPTION_COLORS[option.type] }]}>
         <Text style={styles.optionPillText}>{OPTION_LABELS[option.type]}</Text>
       </View>
       <Text style={styles.optionText}>{option.text}</Text>
@@ -110,6 +123,7 @@ function OptionCard({ option, recordId, feedbackGiven, isSaved, onFeedback, onSa
 
 export default function TextingModeScreen({ navigation }: Props) {
   const { response, isLoading, error, submit, reset } = useAIResponse();
+  const { colors } = useTheme();
   const [context, setContext] = useState('');
   const [userRequest, setUserRequest] = useState('');
   const [relationshipContext, setRelationshipContext] = useState('');
@@ -117,6 +131,43 @@ export default function TextingModeScreen({ navigation }: Props) {
   const [environment, setEnvironment] = useState('');
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
+
+  const styles = useMemo(() => StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    flex: { flex: 1 },
+    header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+    backBtn: { padding: spacing.sm, alignSelf: 'flex-start' as const },
+    backBtnText: { color: colors.textPrimary, fontSize: 28, fontWeight: typography.weights.bold },
+    scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xxl, gap: spacing.sm },
+    title: { fontSize: typography.sizes.title, fontWeight: typography.weights.bold, marginBottom: spacing.md, color: colors.textPrimary },
+    label: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, marginTop: 12, marginBottom: 6, color: colors.textPrimary },
+    optionalLabel: { flexDirection: 'row' as const },
+    optionalHint: { fontWeight: typography.weights.regular, color: colors.textTertiary, fontSize: typography.sizes.label },
+    textArea: {
+      borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm,
+      paddingHorizontal: 14, paddingVertical: 12, fontSize: typography.sizes.base,
+      minHeight: 120, color: colors.textPrimary, backgroundColor: colors.surface,
+    },
+    input: {
+      borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm,
+      paddingHorizontal: 14, paddingVertical: 12, fontSize: typography.sizes.base,
+      color: colors.textPrimary, backgroundColor: colors.surface,
+    },
+    otherInput: { marginTop: spacing.sm },
+    chipGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: spacing.sm },
+    chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radii.full, paddingHorizontal: 14, paddingVertical: spacing.sm, backgroundColor: colors.surfaceSecondary },
+    chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    chipText: { fontSize: typography.sizes.label, color: colors.textSecondary },
+    chipTextSelected: { color: colors.surface, fontWeight: typography.weights.semibold },
+    button: { backgroundColor: colors.accent, borderRadius: radii.sm, paddingVertical: 14, alignItems: 'center' as const, marginTop: spacing.md },
+    buttonDisabled: { opacity: 0.4 },
+    buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
+    resultsContainer: { marginTop: spacing.lg, gap: 12 },
+    deliveryCard: { padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.accentSoft, borderWidth: 1, borderColor: colors.border, gap: 6 },
+    deliveryLabel: { fontSize: typography.sizes.small, fontWeight: typography.weights.bold, color: colors.accent, letterSpacing: 0.8, textTransform: 'uppercase' as const },
+    deliveryText: { fontSize: typography.sizes.label, lineHeight: 21, color: colors.textSecondary },
+    error: { color: colors.error, fontSize: typography.sizes.label, marginTop: 12 },
+  }), [colors]);
 
   useEffect(() => {
     setFeedbackGiven(null);
@@ -150,20 +201,21 @@ export default function TextingModeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backBtnText}>←</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Texting Mode</Text>
 
           <Text style={styles.label}>What's the context?</Text>
           <TextInput
             style={styles.textArea}
             placeholder="e.g. We matched last week and she just said 'you seem different' / My manager publicly shut down my idea in a meeting / Friend group's been distant since the trip"
+            placeholderTextColor={colors.textTertiary}
             value={context}
             onChangeText={setContext}
             multiline
@@ -176,6 +228,7 @@ export default function TextingModeScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="e.g. I want to be playful without seeming eager / I need to push back without seeming defensive / I want to break the tension without making it weird"
+            placeholderTextColor={colors.textTertiary}
             value={userRequest}
             onChangeText={setUserRequest}
             editable={!isLoading}
@@ -206,6 +259,7 @@ export default function TextingModeScreen({ navigation }: Props) {
             <TextInput
               style={[styles.input, styles.otherInput]}
               placeholder="Describe the relationship…"
+              placeholderTextColor={colors.textTertiary}
               value={relationshipOther}
               onChangeText={setRelationshipOther}
               editable={!isLoading}
@@ -219,6 +273,7 @@ export default function TextingModeScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="e.g. Late night, flirty tone / Post-meeting, still tense / Group chat, everyone's watching"
+            placeholderTextColor={colors.textTertiary}
             value={environment}
             onChangeText={setEnvironment}
             editable={!isLoading}
@@ -257,213 +312,8 @@ export default function TextingModeScreen({ navigation }: Props) {
               </View>
             </View>
           )}
-
-          <TouchableOpacity
-            style={styles.editLink}
-            onPress={() => navigation.navigate('PersonalitySetup')}
-          >
-            <Text style={styles.editLinkText}>My Profile</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  flex: { flex: 1 },
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xxl,
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: typography.sizes.title,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.semibold,
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  optionalLabel: {
-    flexDirection: 'row',
-  },
-  optionalHint: {
-    fontWeight: typography.weights.regular,
-    color: colors.textTertiary,
-    fontSize: typography.sizes.label,
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: typography.sizes.base,
-    minHeight: 120,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: typography.sizes.base,
-  },
-  otherInput: {
-    marginTop: spacing.sm,
-  },
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.full,
-    paddingHorizontal: 14,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceSecondary,
-  },
-  chipSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  chipText: {
-    fontSize: typography.sizes.label,
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
-    color: colors.surface,
-    fontWeight: typography.weights.semibold,
-  },
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.sm,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  buttonDisabled: { opacity: 0.4 },
-  buttonText: {
-    color: colors.surface,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.semibold,
-  },
-  resultsContainer: {
-    marginTop: spacing.lg,
-    gap: 12,
-  },
-  optionCard: {
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.surfaceSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 10,
-    ...shadow.card,
-  },
-  optionPill: {
-    alignSelf: 'flex-start',
-    borderRadius: radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: spacing.xs,
-  },
-  optionPillText: {
-    color: colors.surface,
-    fontSize: typography.sizes.small,
-    fontWeight: typography.weights.bold,
-    letterSpacing: 0.5,
-  },
-  optionText: {
-    fontSize: typography.sizes.base,
-    lineHeight: typography.lineHeights.base,
-    color: colors.textPrimary,
-    fontWeight: typography.weights.medium,
-  },
-  optionNote: {
-    fontSize: typography.sizes.label,
-    lineHeight: typography.lineHeights.label,
-    color: colors.textTertiary,
-    fontStyle: 'italic',
-  },
-  copyButton: {
-    alignSelf: 'flex-end',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: 2,
-  },
-  copyButtonText: {
-    fontSize: typography.sizes.label,
-    color: colors.textTertiary,
-  },
-  copyButtonTextCopied: {
-    color: colors.success,
-    fontWeight: typography.weights.semibold,
-  },
-  feedbackRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: spacing.xs,
-  },
-  feedbackBtn: {
-    borderRadius: radii.lg,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: colors.surfaceSecondary,
-  },
-  feedbackBtnActive: {
-    backgroundColor: colors.textPrimary,
-  },
-  feedbackBtnSaved: {
-    backgroundColor: colors.success,
-  },
-  feedbackBtnText: {
-    fontSize: typography.sizes.small,
-    color: colors.textSecondary,
-  },
-  feedbackBtnTextActive: {
-    color: colors.surface,
-    fontWeight: typography.weights.semibold,
-  },
-  deliveryCard: {
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 6,
-  },
-  deliveryLabel: {
-    fontSize: typography.sizes.small,
-    fontWeight: typography.weights.bold,
-    color: colors.accent,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  deliveryText: {
-    fontSize: typography.sizes.label,
-    lineHeight: 21,
-    color: colors.textSecondary,
-  },
-  error: {
-    color: colors.error,
-    fontSize: typography.sizes.label,
-    marginTop: 12,
-  },
-  editLink: {
-    marginTop: spacing.lg,
-    alignItems: 'center',
-  },
-  editLinkText: {
-    color: colors.textTertiary,
-    fontSize: typography.sizes.label,
-    textDecorationLine: 'underline',
-  },
-});

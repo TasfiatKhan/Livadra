@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   background: '#FAFAF8',
   surface: '#FFFFFF',
   surfaceSecondary: '#F4F3F0',
@@ -14,6 +14,27 @@ export const colors = {
   playful: '#C4956A',
   bold: '#8B5E6B',
 } as const;
+
+export const darkColors = {
+  background: '#1A1A1A',
+  surface: '#242424',
+  surfaceSecondary: '#2A2A2A',
+  accent: '#C4956A',
+  accentSoft: '#2C1F0F',
+  textPrimary: '#F0EEE9',
+  textSecondary: '#ABABAB',
+  textTertiary: '#555555',
+  border: '#333333',
+  success: '#5C9B6E',
+  error: '#C0392B',
+  safe: '#5B8DB8',
+  playful: '#C4956A',
+  bold: '#8B5E6B',
+} as const;
+
+export type AppColors = typeof lightColors;
+
+export const colors = lightColors;
 
 export const typography = {
   sizes: {

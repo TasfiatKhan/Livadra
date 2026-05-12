@@ -126,7 +126,7 @@ class LiveVoiceView(APIView):
 
         if len(transcription.text.strip()) < 10:
             return Response(
-                {'detail': 'No speech detected. Press and hold, then describe your situation clearly.'},
+                {'detail': 'No speech detected. Tap and speak, tap again when done.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

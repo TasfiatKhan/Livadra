@@ -41,7 +41,7 @@ class MomentDetailSerializer(serializers.ModelSerializer):
 class MomentCreateSerializer(serializers.Serializer):
     relationship_context = serializers.ChoiceField(choices=RELATIONSHIP_CHOICES)
     relationship_other = serializers.CharField(required=False, default='', allow_blank=True)
-    mode = serializers.ChoiceField(choices=[('texting', 'Texting'), ('live', 'Live')])
+    mode = serializers.ChoiceField(choices=[('texting', 'Texting'), ('live', 'Live')], required=False, default='texting')
     environment = serializers.CharField(required=False, default='', allow_blank=True)
     initial_input = serializers.CharField(required=False, default='', allow_blank=True)
     audio = serializers.FileField(required=False)
