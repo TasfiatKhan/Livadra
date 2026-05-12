@@ -21,10 +21,15 @@ import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 import { LIVE_VOICE_PATH } from '../../services/humorService';
 import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import api from '../../services/api';
-import { colors, typography, spacing, radii, shadow } from '../../theme';
+import { colors, typography, spacing, radii } from '../../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'LiveMode'>;
 type RecordingState = 'idle' | 'recording' | 'processing';
+
+const DARK_BG = '#1A1A1A';
+const DARK_SURFACE = '#242424';
+const DARK_CHIP = '#2A2A2A';
+const DARK_BORDER = '#333';
 
 const OPTION_LABELS: Record<AIOption['type'], string> = {
   safe: 'Safe',
@@ -39,10 +44,10 @@ const OPTION_COLORS: Record<AIOption['type'], string> = {
 };
 
 const FEEDBACK_BUTTONS = [
-  { type: 'natural', label: '👍 Natural' },
-  { type: 'loved', label: '🔥 Loved It' },
-  { type: 'cringe', label: '😬 Cringe' },
-  { type: 'risky', label: '⚠️ Too Risky' },
+  { type: 'natural', label: '👍' },
+  { type: 'loved', label: '🔥' },
+  { type: 'cringe', label: '😬' },
+  { type: 'risky', label: '⚠️' },
 ] as const;
 
 export default function LiveModeScreen({ navigation }: Props) {
@@ -50,7 +55,6 @@ export default function LiveModeScreen({ navigation }: Props) {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [deliveryExpanded, setDeliveryExpanded] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [relationshipContext, setRelationshipContext] = useState('');
@@ -58,6 +62,9 @@ export default function LiveModeScreen({ navigation }: Props) {
   const [environment, setEnvironment] = useState('');
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
+  const [contextExpanded, setContextExpanded] = useState(false);
+  const [noteVisible, setNoteVisible] = useState(false);
+  const [deliveryVisible, setDeliveryVisible] = useState(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(1)).current;
@@ -65,11 +72,15 @@ export default function LiveModeScreen({ navigation }: Props) {
 
   useEffect(() => {
     setCopied(false);
+    setNoteVisible(false);
+    setDeliveryVisible(false);
   }, [currentIndex]);
 
   useEffect(() => {
     setFeedbackGiven(null);
     setSavedOptions(new Set());
+    setNoteVisible(false);
+    setDeliveryVisible(false);
   }, [response]);
 
   const startRecording = async () => {
@@ -85,10 +96,7 @@ export default function LiveModeScreen({ navigation }: Props) {
         setError('Microphone permission is required.');
         return;
       }
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording: rec } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
@@ -110,8 +118,7 @@ export default function LiveModeScreen({ navigation }: Props) {
       );
       pulseLoop.current.start();
     } catch (e: any) {
-      console.error('Recording error:', e);
-      setError('Could not start recording: ' + (e?.message ?? 'unknown error'));
+      setError('Could not start recording.');
     }
   };
 
@@ -145,10 +152,9 @@ export default function LiveModeScreen({ navigation }: Props) {
       });
       setResponse(data);
       setCurrentIndex(0);
-      setDeliveryExpanded(false);
     } catch (e: any) {
       const errData = e?.response?.data;
-      setError(errData?.detail ?? 'Something went wrong. Please try again.');
+      setError(errData?.detail ?? 'Something went wrong. Try again.');
     } finally {
       await Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
       setRecordingState('idle');
@@ -188,60 +194,84 @@ export default function LiveModeScreen({ navigation }: Props) {
   const canRecord = relationshipContext !== '';
   const currentOption = response?.options[currentIndex];
 
+  const recordStatus =
+    recordingState === 'recording' ? 'Tap to stop' :
+    recordingState === 'processing' ? 'Processing…' :
+    canRecord ? 'Tap to speak' : "Select who you're with";
+
   return (
     <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+            <Text style={styles.headerBtnText}>←</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('PersonalitySetup')} style={styles.headerBtn}>
+            <Text style={styles.headerBtnText}>Profile</Text>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Live Mode</Text>
-
-          <Text style={styles.label}>Who are you talking to?</Text>
-          <View style={styles.chipGrid}>
-            {RELATIONSHIP_CONTEXTS.map((option) => {
-              const selected = relationshipContext === option.value;
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsRow}
+          >
+            {RELATIONSHIP_CONTEXTS.map((opt) => {
+              const selected = relationshipContext === opt.value;
               return (
                 <TouchableOpacity
-                  key={option.value}
+                  key={opt.value}
                   style={[styles.chip, selected && styles.chipSelected]}
                   onPress={() => {
-                    setRelationshipContext(option.value);
-                    if (option.value !== 'other') setRelationshipOther('');
+                    setRelationshipContext(opt.value);
+                    if (opt.value !== 'other') setRelationshipOther('');
                   }}
                   disabled={recordingState !== 'idle'}
                 >
                   <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                    {option.label}
+                    {opt.label}
                   </Text>
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
+
           {relationshipContext === 'other' && (
             <TextInput
-              style={[styles.input, styles.otherInput]}
-              placeholder="Describe the relationship…"
+              style={styles.otherInput}
+              placeholder="Describe…"
+              placeholderTextColor={colors.textTertiary}
               value={relationshipOther}
               onChangeText={setRelationshipOther}
               editable={recordingState === 'idle'}
             />
           )}
 
-          <Text style={[styles.label, styles.optionalLabel]}>
-            What's the vibe?{' '}
-            <Text style={styles.optionalHint}>(optional)</Text>
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Party, just introduced / Post-meeting, still tense / Networking event, want to make a real impression"
-            value={environment}
-            onChangeText={setEnvironment}
-            editable={recordingState === 'idle'}
-          />
+          <TouchableOpacity
+            style={styles.contextToggle}
+            onPress={() => setContextExpanded(e => !e)}
+          >
+            <Text style={styles.contextToggleText}>
+              {contextExpanded ? 'Hide context ▴' : '+ Add context'}
+            </Text>
+          </TouchableOpacity>
+
+          {contextExpanded && (
+            <TextInput
+              style={styles.contextInput}
+              placeholder="vibe, setting, tone…"
+              placeholderTextColor={colors.textTertiary}
+              value={environment}
+              onChangeText={setEnvironment}
+              editable={recordingState === 'idle'}
+            />
+          )}
 
           <View style={styles.recordSection}>
             <Animated.View style={{ transform: [{ scale: pulseAnim }], opacity: pulseOpacity }}>
@@ -253,40 +283,58 @@ export default function LiveModeScreen({ navigation }: Props) {
                 ]}
                 onPress={toggleRecording}
                 disabled={!canRecord || recordingState === 'processing'}
+                activeOpacity={0.8}
               >
                 {recordingState === 'processing' ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.surface} size="small" />
                 ) : (
-                  <View style={styles.recordDot} />
+                  <View style={[
+                    styles.recordDot,
+                    recordingState === 'recording' && styles.recordDotActive,
+                  ]} />
                 )}
               </TouchableOpacity>
             </Animated.View>
-            <Text style={[styles.recordLabel, !canRecord && styles.recordLabelMuted]}>
-              {recordingState === 'idle'
-                ? canRecord
-                  ? 'Tap to speak'
-                  : "Select who you're talking to first"
-                : recordingState === 'recording'
-                ? 'Recording…'
-                : 'Processing…'}
+            <Text style={[styles.recordStatus, !canRecord && styles.recordStatusMuted]}>
+              {recordStatus}
             </Text>
           </View>
 
           {error !== '' && <Text style={styles.error}>{error}</Text>}
 
           {response && currentOption && (
-            <View style={styles.resultsContainer}>
-              <View style={styles.optionCard}>
-                <View style={[styles.optionPill, { backgroundColor: OPTION_COLORS[currentOption.type] }]}>
-                  <Text style={styles.optionPillText}>{OPTION_LABELS[currentOption.type]}</Text>
+            <View style={styles.responseSection}>
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <TouchableOpacity onPress={handleCopy} style={styles.copyBtn}>
+                    <Text style={[styles.copyBtnText, copied && styles.copyBtnTextCopied]}>
+                      {copied ? 'Copied' : 'Copy'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+
                 <Text style={styles.optionText}>{currentOption.text}</Text>
-                <Text style={styles.optionNote}>{currentOption.note}</Text>
-                <TouchableOpacity style={styles.copyButton} onPress={handleCopy}>
-                  <Text style={[styles.copyButtonText, copied && styles.copyButtonTextCopied]}>
-                    {copied ? 'Copied!' : 'Copy'}
-                  </Text>
-                </TouchableOpacity>
+
+                <View style={styles.cardFooter}>
+                  <View style={[styles.typePill, { backgroundColor: OPTION_COLORS[currentOption.type] }]}>
+                    <Text style={styles.typePillText}>{OPTION_LABELS[currentOption.type]}</Text>
+                  </View>
+                  <View style={styles.revealRow}>
+                    <TouchableOpacity onPress={() => setNoteVisible(v => !v)}>
+                      <Text style={styles.revealBtn}>{noteVisible ? 'Note ▴' : 'Note'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setDeliveryVisible(v => !v)}>
+                      <Text style={styles.revealBtn}>{deliveryVisible ? 'Delivery ▴' : 'Delivery'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {noteVisible && (
+                  <Text style={styles.subText}>{currentOption.note}</Text>
+                )}
+                {deliveryVisible && (
+                  <Text style={styles.subText}>{response.delivery}</Text>
+                )}
 
                 {response.record_id != null && (
                   <View style={styles.feedbackRow}>
@@ -298,26 +346,16 @@ export default function LiveModeScreen({ navigation }: Props) {
                           style={[styles.feedbackBtn, active && styles.feedbackBtnActive]}
                           onPress={() => handleFeedback(type)}
                         >
-                          <Text style={[styles.feedbackBtnText, active && styles.feedbackBtnTextActive]}>
-                            {label}
-                          </Text>
+                          <Text style={styles.feedbackLabel}>{label}</Text>
                         </TouchableOpacity>
                       );
                     })}
                     <TouchableOpacity
-                      style={[
-                        styles.feedbackBtn,
-                        savedOptions.has(currentOption.type) && styles.feedbackBtnSaved,
-                      ]}
+                      style={[styles.feedbackBtn, savedOptions.has(currentOption.type) && styles.feedbackBtnSaved]}
                       onPress={handleSave}
                       disabled={savedOptions.has(currentOption.type)}
                     >
-                      <Text style={[
-                        styles.feedbackBtnText,
-                        savedOptions.has(currentOption.type) && styles.feedbackBtnTextActive,
-                      ]}>
-                        {savedOptions.has(currentOption.type) ? '💾 Saved' : '💾 Save'}
-                      </Text>
+                      <Text style={styles.feedbackLabel}>💾</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -325,50 +363,23 @@ export default function LiveModeScreen({ navigation }: Props) {
 
               <View style={styles.navRow}>
                 <TouchableOpacity
-                  style={styles.navArrow}
                   onPress={() => setCurrentIndex(i => i - 1)}
                   disabled={currentIndex === 0}
+                  style={styles.navBtn}
                 >
-                  <Text style={[styles.navArrowText, currentIndex === 0 && styles.navArrowDisabled]}>
-                    ‹
-                  </Text>
+                  <Text style={[styles.navArrow, currentIndex === 0 && styles.navArrowDisabled]}>‹</Text>
                 </TouchableOpacity>
-                <Text style={styles.navCounter}>
-                  {currentIndex + 1} of {response.options.length}
-                </Text>
+                <Text style={styles.navCounter}>{currentIndex + 1} / {response.options.length}</Text>
                 <TouchableOpacity
-                  style={styles.navArrow}
                   onPress={() => setCurrentIndex(i => i + 1)}
                   disabled={currentIndex === response.options.length - 1}
+                  style={styles.navBtn}
                 >
-                  <Text style={[styles.navArrowText, currentIndex === response.options.length - 1 && styles.navArrowDisabled]}>
-                    ›
-                  </Text>
+                  <Text style={[styles.navArrow, currentIndex === response.options.length - 1 && styles.navArrowDisabled]}>›</Text>
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                style={styles.deliveryToggle}
-                onPress={() => setDeliveryExpanded(e => !e)}
-              >
-                <Text style={styles.deliveryToggleText}>
-                  {deliveryExpanded ? 'Hide delivery tip ▴' : 'Show delivery tip ▾'}
-                </Text>
-              </TouchableOpacity>
-              {deliveryExpanded && (
-                <View style={styles.deliveryCard}>
-                  <Text style={styles.deliveryText}>{response.delivery}</Text>
-                </View>
-              )}
             </View>
           )}
-
-          <TouchableOpacity
-            style={styles.editLink}
-            onPress={() => navigation.navigate('PersonalitySetup')}
-          >
-            <Text style={styles.editLinkText}>My Profile</Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -376,235 +387,164 @@ export default function LiveModeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1, backgroundColor: DARK_BG },
   flex: { flex: 1 },
   scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxl,
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  title: {
-    fontSize: typography.sizes.title,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.semibold,
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  optionalLabel: {
+
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
-  optionalHint: {
-    fontWeight: typography.weights.regular,
-    color: colors.textTertiary,
-    fontSize: typography.sizes.label,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: typography.sizes.base,
-  },
-  otherInput: {
-    marginTop: spacing.sm,
-  },
-  chipGrid: {
+  headerBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
+  headerBtnText: { color: colors.textTertiary, fontSize: typography.sizes.label },
+
+  chipsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radii.full,
-    paddingHorizontal: 14,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    backgroundColor: DARK_CHIP,
+  },
+  chipSelected: { backgroundColor: colors.accent },
+  chipText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+  chipTextSelected: { color: colors.surface, fontWeight: typography.weights.semibold },
+
+  otherInput: {
+    backgroundColor: DARK_CHIP,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceSecondary,
-  },
-  chipSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
-  },
-  chipText: {
-    fontSize: typography.sizes.label,
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
+    fontSize: typography.sizes.base,
     color: colors.surface,
-    fontWeight: typography.weights.semibold,
   },
+
+  contextToggle: { alignSelf: 'flex-start', paddingVertical: spacing.xs },
+  contextToggleText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+
+  contextInput: {
+    backgroundColor: DARK_CHIP,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: typography.sizes.base,
+    color: colors.surface,
+  },
+
   recordSection: {
     alignItems: 'center',
-    marginTop: 36,
-    marginBottom: spacing.sm,
-    gap: 14,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
+    gap: spacing.md,
   },
   recordButton: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.textPrimary,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: DARK_CHIP,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: DARK_BORDER,
   },
-  recordButtonActive: {
-    backgroundColor: colors.error,
-  },
-  recordButtonDisabled: {
-    opacity: 0.35,
-  },
-  recordDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.surface,
-  },
-  recordLabel: {
-    fontSize: typography.sizes.label,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  recordLabelMuted: {
-    color: colors.textTertiary,
-  },
-  resultsContainer: {
-    marginTop: spacing.lg,
-    gap: 12,
-  },
-  optionCard: {
+  recordButtonActive: { backgroundColor: colors.error, borderColor: colors.error },
+  recordButtonDisabled: { opacity: 0.35 },
+  recordDot: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.surface },
+  recordDotActive: { width: 14, height: 14, borderRadius: 3 },
+  recordStatus: { fontSize: typography.sizes.label, color: colors.textSecondary },
+  recordStatusMuted: { color: colors.textTertiary },
+
+  error: { color: colors.error, fontSize: typography.sizes.label, textAlign: 'center' },
+
+  responseSection: { gap: spacing.sm },
+
+  card: {
+    backgroundColor: DARK_SURFACE,
+    borderRadius: radii.lg,
     padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.surfaceSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 10,
-    ...shadow.card,
+    gap: spacing.sm,
   },
-  optionPill: {
-    alignSelf: 'flex-start',
-    borderRadius: radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: spacing.xs,
-  },
-  optionPillText: {
-    color: colors.surface,
-    fontSize: typography.sizes.small,
-    fontWeight: typography.weights.bold,
-    letterSpacing: 0.5,
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'flex-end' },
+  copyBtn: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
+  copyBtnText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+  copyBtnTextCopied: { color: colors.success, fontWeight: typography.weights.semibold },
+
   optionText: {
-    fontSize: typography.sizes.base,
-    lineHeight: 25,
-    color: colors.textPrimary,
+    fontSize: typography.sizes.heading,
+    lineHeight: typography.lineHeights.heading,
+    color: colors.surface,
     fontWeight: typography.weights.medium,
   },
-  optionNote: {
-    fontSize: typography.sizes.label,
-    lineHeight: typography.lineHeights.label,
-    color: colors.textTertiary,
-    fontStyle: 'italic',
-  },
-  copyButton: {
-    alignSelf: 'flex-end',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: 2,
-  },
-  copyButtonText: {
-    fontSize: typography.sizes.label,
-    color: colors.textTertiary,
-  },
-  copyButtonTextCopied: {
-    color: colors.success,
-    fontWeight: typography.weights.semibold,
-  },
-  feedbackRow: {
+
+  cardFooter: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: spacing.xs,
   },
-  feedbackBtn: {
-    borderRadius: radii.lg,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: colors.surfaceSecondary,
+  typePill: {
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
   },
-  feedbackBtnActive: {
-    backgroundColor: colors.textPrimary,
-  },
-  feedbackBtnSaved: {
-    backgroundColor: colors.success,
-  },
-  feedbackBtnText: {
+  typePillText: {
     fontSize: typography.sizes.small,
-    color: colors.textSecondary,
-  },
-  feedbackBtnTextActive: {
     color: colors.surface,
-    fontWeight: typography.weights.semibold,
+    fontWeight: typography.weights.bold,
+    letterSpacing: 0.4,
   },
+  revealRow: { flexDirection: 'row', gap: spacing.md },
+  revealBtn: { fontSize: typography.sizes.label, color: colors.textTertiary },
+
+  subText: {
+    fontSize: typography.sizes.label,
+    lineHeight: typography.lineHeights.label,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  feedbackRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    flexWrap: 'wrap',
+  },
+  feedbackBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.full,
+    backgroundColor: DARK_CHIP,
+  },
+  feedbackBtnActive: { backgroundColor: colors.accent },
+  feedbackBtnSaved: { backgroundColor: colors.success },
+  feedbackLabel: { fontSize: typography.sizes.label },
+
   navRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.lg,
+    paddingVertical: spacing.xs,
   },
-  navArrow: {
-    padding: spacing.sm,
-  },
-  navArrowText: {
-    fontSize: 32,
-    color: colors.textSecondary,
-    lineHeight: 36,
-  },
-  navArrowDisabled: {
-    color: colors.textTertiary,
-  },
+  navBtn: { padding: spacing.sm },
+  navArrow: { fontSize: 28, color: colors.textSecondary, lineHeight: 32 },
+  navArrowDisabled: { color: DARK_BORDER },
   navCounter: {
     fontSize: typography.sizes.label,
     color: colors.textTertiary,
-    minWidth: 48,
+    minWidth: 40,
     textAlign: 'center',
-  },
-  deliveryToggle: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  deliveryToggleText: {
-    fontSize: typography.sizes.label,
-    color: colors.accent,
-  },
-  deliveryCard: {
-    padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  deliveryText: {
-    fontSize: typography.sizes.label,
-    lineHeight: 21,
-    color: colors.textSecondary,
-  },
-  error: {
-    color: colors.error,
-    fontSize: typography.sizes.label,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-  },
-  editLink: {
-    marginTop: spacing.lg,
-    alignItems: 'center',
-  },
-  editLinkText: {
-    color: colors.textTertiary,
-    fontSize: typography.sizes.label,
-    textDecorationLine: 'underline',
   },
 });
