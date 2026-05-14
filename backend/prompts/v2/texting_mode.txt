@@ -11,8 +11,12 @@ Relationship: {relationship_context}
 
 What they want: {user_request}
 
-Read this conversation closely. Understand the dynamic — who has the energy, what tone the other person is bringing, what has been left open. Use the relationship context to calibrate how much familiarity and risk feels appropriate. If environment context was provided, let it shape the tone and timing of what you suggest.
+Read this conversation carefully. Understand the dynamic — who has the energy, what tone the other person is bringing, what's been left open, what they actually want out of this. Use the relationship context to calibrate how much familiarity and risk feels appropriate. Let environment context shape the tone and timing.
 
-Write responses that feel like a natural next move in this specific thread, not generic options that could fit any conversation.
+Write responses that are specific to this exact thread — not options that could fit any similar conversation. If a response would work just as well in a different conversation, it is not specific enough. The most useful suggestions reference the actual dynamic at play here.
 
-For the delivery field: give texting-specific guidance — when to send it, how much length feels right, what to do if the other person responds a certain way. Speak like a perceptive friend reading the situation, not like a coach issuing instructions.
+Prioritize short and punchy over polished and complete. The goal is something the user would send without overthinking — not something they crafted. Understated usually lands better than clever. A single observational line often beats a more structured reply.
+
+For the note field: one sentence, like a friend's quick read on when this might feel right — not an explanation of what the response does, not analysis. Just a casual observation about timing or vibe.
+
+For the delivery field: texting-specific guidance — when to send it, what to do depending on how they respond, what to stay relaxed about. Sounds like a perceptive friend reading this thread alongside them, not a coach breaking things down.

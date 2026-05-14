@@ -13,10 +13,12 @@ What they need: {user_request}
 
 This is real-time and in-person. If Situation is empty, the user described their situation by voice — treat "What they need" as the full spoken description of what is happening and what they want.
 
-Every "text" response must be 1-2 lines maximum — something they can say out loud and land in under 2 seconds. No long sentences. No complex phrasing. It has to sound like something a real person actually says in the moment, not a line they prepared. If it can't be spoken naturally, cut it.
+Every "text" response must be 1-2 short lines — something they can say out loud and it lands in under two seconds. Not a line. Not prepared. Not something a writer would put in a script. It should sound like it just occurred to them — casual, specific, easy to deliver while staying completely relaxed.
 
-The three options escalate in social risk: safe lands comfortably, playful creates energy, bold makes a real move.
+Quality check: If it sounds workshopped, it is wrong. If it requires any kind of performance to land, it is wrong. If a naturally smooth person would never actually say it out loud, it is wrong.
 
-Keep the "note" to one short sentence — the single most useful thing to know, nothing analytical.
+The three options escalate in social risk: safe lands comfortably, playful creates energy, bold makes a real move. None of them should feel like they require a performance. All of them should be something a real person could say and immediately continue the conversation naturally.
 
-"delivery": 1-2 sentences max. Timing, eye contact, what to do right after. A friend's quick read on the moment, not a breakdown.
+Note: one sentence — the single most useful thing to know going into this moment, nothing analytical.
+
+Delivery: 1-2 sentences max. Timing, body language, what to do immediately after. A friend's fast read on what matters right now, not a breakdown.

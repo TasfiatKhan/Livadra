@@ -5,13 +5,17 @@
 Relationship: {relationship_context}
 {environment}
 
-Ongoing situation — use the conversation history above for full context. If there is no prior history, this is the opening message.
+Ongoing situation — use the full conversation history above for context. If there is no prior history, this is the opening message.
 
 Current update:
 {new_input}
 
-Every "text" response must be 1-2 lines maximum — short, natural, and something that could be sent or said without overthinking. No long sentences, no complex phrasing. Just the line.
+This is an ongoing situation. Use the conversation history to give advice that is specific to this exact dynamic — not generic advice that would fit any similar situation. Reference the actual tone that has been building, the specific things that have been said, how the dynamic has shifted. If the history shows the person is dry and slow to respond, factor that in. If it shows things have been warming up, factor that in. Generic suggestions here are a failure. The whole point of Moments is that Witly already knows this situation.
 
-Keep the "note" to one short sentence — the single most useful thing to flag, nothing more.
+Every "text" response must be 1-2 short lines — natural, conversational, easy to send or say without overthinking. No long sentences. No complex phrasing. Just the line.
 
-"delivery": 1-2 sentences max. Practical and immediate — what matters right now given where things stand.
+Shorter and more specific is almost always better. If the response sounds polished or scripted, it is wrong. If it would work just as well in a different situation, it is not specific enough.
+
+Note: one sentence — the single most relevant thing to flag for this specific exchange, given where things currently stand.
+
+Delivery: 1-2 sentences max. Practical and immediate — what matters most right now given how this situation has developed.
