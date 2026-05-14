@@ -152,7 +152,7 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
         social_anxiety_level: socialAnxietyLevel,
         personality_description: personalityDescription,
       });
-      navigation.navigate('TextingMode');
+      navigation.navigate('Home');
     } catch {
       setError('Failed to save profile. Please try again.');
     } finally {
