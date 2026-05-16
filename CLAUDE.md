@@ -2,6 +2,10 @@
 
 Session continuity document. Update after every significant implementation step.
 
+**Repo:** `https://github.com/TasfiatKhan/Witly`
+**Local path:** `/home/zab/Desktop/Projects/Witly`
+**Landing page repo:** `https://github.com/TasfiatKhan/Wittly_Landing` — `/home/zab/Desktop/Projects/witly_landing`
+
 ## Project
 An AI-powered social intelligence and situational humor assistant for real-world human interactions. Helps users navigate awkward situations, social tension, workplace interactions, friendships, parties, networking, texting, dating, banter, conversational flow, charisma and confidence. Humor is the tool, not the entire product.
 
