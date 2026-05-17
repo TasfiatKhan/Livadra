@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -13,8 +14,10 @@
       "bundleIdentifier": "com.humorai.app"
     },
     "android": {
+      "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#C4956A"
       },
       "package": "com.witly.app",
       "permissions": ["android.permission.RECORD_AUDIO"]
