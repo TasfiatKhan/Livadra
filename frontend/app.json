@@ -24,9 +24,13 @@
         "android.permission.RECORD_AUDIO"
       ]
     },
+    "splash": {
+      "backgroundColor": "#121110"
+    },
     "plugins": [
       "expo-secure-store",
-      "expo-av"
+      "expo-av",
+      "expo-splash-screen"
     ],
     "extra": {
       "eas": {
