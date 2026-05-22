@@ -70,5 +70,11 @@ frontend/
 - Frontend never calls the API from screens — all network calls go through `frontend/src/services/`
 
 ## Related
-
 Landing page: [github.com/TasfiatKhan/Wittly_Landing](https://github.com/TasfiatKhan/Wittly_Landing)
+
+
+## Author
+Tasfiat Khan — operating as Zabmation
+- LinkedIn: [https://www.linkedin.com/in/tasfiat-zabir-khan-0ab4971b6/]
+- Email: tasfiatzabirkhan@gmail.com
+- Available for contract work
