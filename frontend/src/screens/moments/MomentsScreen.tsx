@@ -37,6 +37,7 @@ export default function MomentsScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const [moments, setMoments] = useState<Moment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
   const styles = useMemo(() => StyleSheet.create({
@@ -79,6 +80,7 @@ export default function MomentsScreen({ navigation }: Props) {
     centered: { flex: 1, alignItems: 'center' as const, justifyContent: 'center' as const, gap: spacing.sm },
     emptyText: { fontSize: typography.sizes.base, fontWeight: typography.weights.semibold, color: colors.textSecondary },
     emptySubtext: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    errorText: { fontSize: typography.sizes.base, color: colors.error, textAlign: 'center' as const },
     list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: 12 },
     card: {
       borderWidth: 1.5,
@@ -103,9 +105,10 @@ export default function MomentsScreen({ navigation }: Props) {
     useCallback(() => {
       let active = true;
       setIsLoading(true);
+      setFetchError(false);
       listMoments(showArchived)
         .then(({ data }) => { if (active) setMoments(data); })
-        .catch(() => {})
+        .catch(() => { if (active) setFetchError(true); })
         .finally(() => { if (active) setIsLoading(false); });
       return () => { active = false; };
     }, [showArchived]),
@@ -152,6 +155,10 @@ export default function MomentsScreen({ navigation }: Props) {
       {isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" />
+        </View>
+      ) : fetchError ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>Failed to load moments. Pull down to retry.</Text>
         </View>
       ) : moments.length === 0 ? (
         <View style={styles.centered}>

@@ -1,4 +1,4 @@
-# Witly — CLAUDE.md
+# Livadra — CLAUDE.md
 
 Session continuity document. Update after every significant implementation step.
 
@@ -14,7 +14,7 @@ An AI-powered social intelligence and situational humor assistant for real-world
 
 ## Product Vision
 
-### What Witly Is
+### What Livadra Is
 A broader AI social copilot — not a dating reply generator. Three complementary modes:
 - **Texting Mode** — quick one-off help with a specific message or situation
 - **Live Mode** — real-time voice-input assistance for situations happening right now
@@ -120,7 +120,7 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 | 23 | Moments creation: remove mode + vibe fields, update situation label | complete — full stack |
 | 24 | Empty transcription UX: Live Mode error copy, Moments coaching exchange | complete — full stack |
 | 25 | Dark/light theme toggle: ThemeContext, darkColors, toggle on HomeScreen | complete — frontend |
-| 26 | Witly logo: SVG + WitlyLogo RN component | complete — frontend |
+| 26 | Livadra logo: SVG + LivadraLogo RN component | complete — frontend |
 | 27 | Android app icon: icon.png + mipmap directories | complete — frontend |
 | 28 | Analytics dashboard | upcoming — Phase 2 |
 | — | Delivery Coaching (v2) | out of scope |

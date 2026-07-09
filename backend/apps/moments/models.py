@@ -6,7 +6,6 @@ class Moment(models.Model):
     class Mode(models.TextChoices):
         TEXTING = 'texting', 'Texting'
         LIVE = 'live', 'Live'
-        LIVE_VOICE = 'live_voice', 'Live Voice'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='moments')
     title = models.CharField(max_length=100)

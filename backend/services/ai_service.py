@@ -17,7 +17,7 @@ class AIService:
     }
 
     def __init__(self):
-        self._client = anthropic.Anthropic(api_key=config('ANTHROPIC_API_KEY'))
+        self._client = anthropic.Anthropic(api_key=config('ANTHROPIC_API_KEY'), timeout=30.0)
         self._personality_template = self._load_template('system_personality.txt')
         self._texting_template = self._load_template('texting_mode.txt')
         self._live_template = self._load_template('live_mode.txt')
@@ -66,7 +66,10 @@ class AIService:
         if text.startswith('```'):
             lines = text.splitlines()
             text = '\n'.join(lines[1:-1]).strip()
-        return json.loads(text)
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f'AI returned invalid JSON: {text[:200]}') from exc
 
     def _call(self, system_prompt: str, user_message: str, max_tokens: int) -> dict:
         return self._call_with_messages(

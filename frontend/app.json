@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Witly",
-    "slug": "witly",
+    "name": "Livadra",
+    "slug": "livadra",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,7 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.humorai.app"
+      "bundleIdentifier": "com.livadra.app"
     },
     "android": {
       "icon": "./assets/images/icon.png",
@@ -19,7 +19,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#C4956A"
       },
-      "package": "com.witly.app",
+      "package": "com.livadra.app",
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ]

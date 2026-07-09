@@ -5,7 +5,7 @@ type Props = {
   size?: number;
 };
 
-export default function WitlyLogo({ size = 64 }: Props) {
+export default function LivadraLogo({ size = 64 }: Props) {
   return (
     <View
       style={{
@@ -27,7 +27,7 @@ export default function WitlyLogo({ size = 64 }: Props) {
           includeFontPadding: false,
         }}
       >
-        W
+        L
       </Text>
     </View>
   );

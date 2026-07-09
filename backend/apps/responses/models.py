@@ -82,6 +82,7 @@ class SavedResponse(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        unique_together = ('user', 'response_record', 'option_type')
         ordering = ['-created_at']
 
     def __str__(self):

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import { getAccessToken } from '../services/api';
 import * as authService from '../services/authService';
 
@@ -21,6 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getAccessToken()
       .then(token => setIsAuthenticated(token !== null))
       .finally(() => setIsLoading(false));
+
+    const sub = DeviceEventEmitter.addListener('auth:expired', () => setIsAuthenticated(false));
+    return () => sub.remove();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

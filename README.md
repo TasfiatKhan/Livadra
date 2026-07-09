@@ -1,4 +1,4 @@
-# Witly
+# Livadra
 
 AI-powered social intelligence for real-world conversations. Helps people navigate texting, in-person moments, and ongoing social situations with more ease, warmth, and confidence.
 

@@ -28,6 +28,9 @@ import { typography, spacing, radii, shadow } from '../../theme';
 type Props = NativeStackScreenProps<MainStackParamList, 'MomentDetail'>;
 type RecordingState = 'idle' | 'recording' | 'processing';
 
+let _tempId = -1;
+const nextTempId = () => _tempId--;
+
 const OPTION_LABELS: Record<AIOption['type'], string> = {
   safe: 'Safe',
   playful: 'Playful',
@@ -162,11 +165,9 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
     }
   }, [localMomentId]);
 
-  useEffect(() => {
-    if (moment?.messages?.length) {
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
-    }
-  }, [moment?.messages?.length]);
+  const handleContentSizeChange = () => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  };
 
   const buildContextFormData = (): FormData => {
     const formData = new FormData();
@@ -266,8 +267,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
               is_archived: data.is_archived,
               messages: [
                 ...prev.messages,
-                { id: Date.now(), role: 'user', content: data.user_input || '(no speech captured)', response_record_id: null, created_at: new Date().toISOString() },
-                { id: Date.now() + 1, role: 'assistant', content: assistantContent, response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
+                { id: nextTempId(), role: 'user', content: data.user_input || '(no speech captured)', response_record_id: null, created_at: new Date().toISOString() },
+                { id: nextTempId(), role: 'assistant', content: assistantContent, response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
               ],
             };
           });
@@ -300,8 +301,8 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
           is_archived: data.is_archived,
           messages: [
             ...prev.messages,
-            { id: Date.now(), role: 'user', content: input, response_record_id: null, created_at: new Date().toISOString() },
-            { id: Date.now() + 1, role: 'assistant', content: JSON.stringify({ options: data.options, delivery: data.delivery }), response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
+            { id: nextTempId(), role: 'user', content: input, response_record_id: null, created_at: new Date().toISOString() },
+            { id: nextTempId(), role: 'assistant', content: JSON.stringify({ options: data.options, delivery: data.delivery }), response_record_id: data.record_id ?? null, created_at: new Date().toISOString() },
           ],
         };
       });
@@ -515,7 +516,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.threadScroll}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.threadScroll} onContentSizeChange={handleContentSizeChange}>
           {moment.messages.map((msg, idx) => {
             if (msg.role === 'user') {
               return (

@@ -20,6 +20,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 ]
 
@@ -67,9 +68,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='humorai'),
-        'USER': config('DB_USER', default='humorai'),
-        'PASSWORD': config('DB_PASSWORD', default='humorai'),
+        'NAME': config('DB_NAME', default='livadra'),
+        'USER': config('DB_USER', default='livadra'),
+        'PASSWORD': config('DB_PASSWORD', default='livadra'),
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='5432'),
     }
@@ -108,6 +109,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '60/hour',
+        'ai': '20/hour',
+    },
 }
 
 SIMPLE_JWT = {
@@ -118,7 +126,7 @@ SIMPLE_JWT = {
         days=config('REFRESH_TOKEN_LIFETIME_DAYS', default=7, cast=int)
     ),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,  # TODO: enable token blacklisting before production
+    'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 

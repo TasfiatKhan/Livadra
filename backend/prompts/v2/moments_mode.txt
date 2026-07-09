@@ -10,7 +10,7 @@ Ongoing situation — use the full conversation history above for context. If th
 Current update:
 {new_input}
 
-This is an ongoing situation. Use the conversation history to give advice that is specific to this exact dynamic — not generic advice that would fit any similar situation. Reference the actual tone that has been building, the specific things that have been said, how the dynamic has shifted. If the history shows the person is dry and slow to respond, factor that in. If it shows things have been warming up, factor that in. Generic suggestions here are a failure. The whole point of Moments is that Witly already knows this situation.
+This is an ongoing situation. Use the conversation history to give advice that is specific to this exact dynamic — not generic advice that would fit any similar situation. Reference the actual tone that has been building, the specific things that have been said, how the dynamic has shifted. If the history shows the person is dry and slow to respond, factor that in. If it shows things have been warming up, factor that in. Generic suggestions here are a failure. The whole point of Moments is that Livadra already knows this situation.
 
 Every "text" response must be 1-2 short lines — natural, conversational, easy to send or say without overthinking. No long sentences. No complex phrasing. Just the line.
 

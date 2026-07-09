@@ -1,10 +1,14 @@
 import json
+import logging
 
+import anthropic
 import openai
 from django.conf import settings
+from django.db.models import Count
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework import status
 
@@ -16,8 +20,14 @@ from .serializers import (
     MomentCreateSerializer, MomentContinueSerializer,
 )
 
+logger = logging.getLogger(__name__)
+
 MESSAGE_CAP = 38  # 19 pairs
 ACTIVE_MOMENT_CAP = 5
+
+
+class AIRateThrottle(UserRateThrottle):
+    scope = 'ai'
 
 
 def _resolve_rel(ctx, other):
@@ -27,12 +37,16 @@ def _resolve_rel(ctx, other):
 
 
 class MomentListCreateView(APIView):
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, JSONParser]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         archived = request.query_params.get('archived', 'false').lower() == 'true'
-        moments = Moment.objects.filter(user=request.user, is_archived=archived)
+        moments = (
+            Moment.objects
+            .filter(user=request.user, is_archived=archived)
+            .annotate(message_count=Count('messages'))
+        )
         return Response(MomentSerializer(moments, many=True).data)
 
     def post(self, request):
@@ -54,7 +68,6 @@ class MomentListCreateView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Resolve initial input — text or audio transcription
         audio_file = vd.get('audio')
         if audio_file:
             try:
@@ -65,7 +78,7 @@ class MomentListCreateView(APIView):
                 )
                 initial_input_text = transcription.text
             except Exception as e:
-                print("Whisper transcription error (moments):", str(e))
+                logger.error('Whisper transcription error (moments): %s', e)
                 return Response(
                     {'detail': 'Audio transcription failed. Please try again.'},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -86,14 +99,20 @@ class MomentListCreateView(APIView):
             content=initial_input_text,
         )
 
-        data = ai_service.get_response_with_history(
-            user_id=request.user.id,
-            relationship_context=relationship,
-            relationship_other='',
-            environment=vd['environment'],
-            history=[],
-            new_input=initial_input_text,
-        )
+        try:
+            data = ai_service.get_response_with_history(
+                user_id=request.user.id,
+                relationship_context=relationship,
+                relationship_other='',
+                environment=vd['environment'],
+                history=[],
+                new_input=initial_input_text,
+            )
+        except anthropic.APITimeoutError:
+            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except ValueError as e:
+            logger.error('AI invalid JSON (moments create): %s', e)
+            return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         record_id = None
         try:
@@ -106,7 +125,7 @@ class MomentListCreateView(APIView):
             )
             record_id = record.id
         except Exception as e:
-            print('AIResponseRecord save failed (moments create):', str(e))
+            logger.error('AIResponseRecord save failed (moments create): %s', e)
 
         MomentMessage.objects.create(
             moment=moment,
@@ -132,6 +151,7 @@ class MomentDetailView(APIView):
 class MomentContinueView(APIView):
     parser_classes = [MultiPartParser, JSONParser]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AIRateThrottle]
 
     def post(self, request, pk):
         try:
@@ -156,7 +176,6 @@ class MomentContinueView(APIView):
         serializer.is_valid(raise_exception=True)
         vd = serializer.validated_data
 
-        # Resolve input — text or audio transcription
         audio_file = vd.get('audio')
         if audio_file:
             try:
@@ -167,7 +186,7 @@ class MomentContinueView(APIView):
                 )
                 user_input = transcription.text
             except Exception as e:
-                print("Whisper transcription error (moments continue):", str(e))
+                logger.error('Whisper transcription error (moments continue): %s', e)
                 return Response(
                     {'detail': 'Audio transcription failed. Please try again.'},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -175,7 +194,6 @@ class MomentContinueView(APIView):
         else:
             user_input = vd['new_input'].strip()
 
-        # Empty transcription — save a coaching exchange without calling AI
         if len(user_input.strip()) < 10:
             coaching_data = {
                 'options': [{'type': 'safe', 'text': 'Tap to speak clearly and in detail.', 'note': ''}],
@@ -194,7 +212,6 @@ class MomentContinueView(APIView):
             moment.save()
             return Response({**coaching_data, 'is_archived': moment.is_archived, 'record_id': None, 'user_input': ''})
 
-        # Capture history before adding the new user message
         history = list(moment.messages.order_by('created_at').values('role', 'content'))
 
         MomentMessage.objects.create(
@@ -203,14 +220,20 @@ class MomentContinueView(APIView):
             content=user_input,
         )
 
-        data = ai_service.get_response_with_history(
-            user_id=request.user.id,
-            relationship_context=moment.relationship_context,
-            relationship_other='',
-            environment=vd['environment'],
-            history=history,
-            new_input=user_input,
-        )
+        try:
+            data = ai_service.get_response_with_history(
+                user_id=request.user.id,
+                relationship_context=moment.relationship_context,
+                relationship_other='',
+                environment=vd['environment'],
+                history=history,
+                new_input=user_input,
+            )
+        except anthropic.APITimeoutError:
+            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except ValueError as e:
+            logger.error('AI invalid JSON (moments continue): %s', e)
+            return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         record_id = None
         try:
@@ -223,7 +246,7 @@ class MomentContinueView(APIView):
             )
             record_id = record.id
         except Exception as e:
-            print('AIResponseRecord save failed (moments continue):', str(e))
+            logger.error('AIResponseRecord save failed (moments continue): %s', e)
 
         MomentMessage.objects.create(
             moment=moment,
@@ -235,7 +258,7 @@ class MomentContinueView(APIView):
         if moment.messages.count() >= MESSAGE_CAP:
             moment.is_archived = True
 
-        moment.save()  # updates last_active_at via auto_now=True
+        moment.save()
 
         return Response({**data, 'is_archived': moment.is_archived, 'record_id': record_id, 'user_input': user_input})
 

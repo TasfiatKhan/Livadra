@@ -197,7 +197,7 @@ export default function TextingModeScreen({ navigation }: Props) {
     try { await saveResponse(response.record_id, optionType, optionText); } catch {}
   };
 
-  const canSubmit = relationshipContext !== '' && !isLoading;
+  const canSubmit = relationshipContext !== '' && context.trim() !== '' && userRequest.trim() !== '' && !isLoading;
 
   return (
     <SafeAreaView style={styles.safe}>

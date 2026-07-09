@@ -1,9 +1,10 @@
 import axios, { AxiosRequestConfig } from 'axios';
+import { DeviceEventEmitter } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { BASE_URL } from '../constants/api';
 
-const ACCESS_KEY = 'witly.access_token';
-const REFRESH_KEY = 'witly.refresh_token';
+const ACCESS_KEY = 'livadra.access_token';
+const REFRESH_KEY = 'livadra.refresh_token';
 
 export const getAccessToken = (): Promise<string | null> =>
   SecureStore.getItemAsync(ACCESS_KEY);
@@ -80,6 +81,7 @@ api.interceptors.response.use(
       const refresh = await getRefreshToken();
       if (!refresh) {
         await clearTokens();
+        DeviceEventEmitter.emit('auth:expired');
         drainQueue(error);
         return Promise.reject(error);
       }
@@ -95,6 +97,7 @@ api.interceptors.response.use(
       return api(original);
     } catch (refreshError) {
       await clearTokens();
+      DeviceEventEmitter.emit('auth:expired');
       drainQueue(refreshError);
       return Promise.reject(refreshError);
     } finally {

@@ -1,14 +1,24 @@
+import logging
+
+import anthropic
 import openai
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework import status
 
 from apps.responses.models import AIResponseRecord
 from services.ai_service import ai_service
 from .serializers import TextingRequestSerializer, LiveRequestSerializer, LiveVoiceRequestSerializer
+
+logger = logging.getLogger(__name__)
+
+
+class AIRateThrottle(UserRateThrottle):
+    scope = 'ai'
 
 
 def _record_response(user, mode, relationship_context, situation_summary, data):
@@ -22,12 +32,13 @@ def _record_response(user, mode, relationship_context, situation_summary, data):
         )
         return record.id
     except Exception as e:
-        print(f'AIResponseRecord save failed ({mode}):', str(e))
+        logger.error('AIResponseRecord save failed (%s): %s', mode, e)
         return None
 
 
 class TextingModeView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AIRateThrottle]
 
     def post(self, request):
         serializer = TextingRequestSerializer(data=request.data)
@@ -41,14 +52,21 @@ class TextingModeView(APIView):
             )
 
         vd = serializer.validated_data
-        data = ai_service.get_texting_response(
-            user_id=request.user.id,
-            context=vd['context'],
-            user_request=vd['user_request'],
-            relationship_context=vd['relationship_context'],
-            relationship_other=vd['relationship_other'],
-            environment=vd['environment'],
-        )
+        try:
+            data = ai_service.get_texting_response(
+                user_id=request.user.id,
+                context=vd['context'],
+                user_request=vd['user_request'],
+                relationship_context=vd['relationship_context'],
+                relationship_other=vd['relationship_other'],
+                environment=vd['environment'],
+            )
+        except anthropic.APITimeoutError:
+            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except ValueError as e:
+            logger.error('AI invalid JSON (texting): %s', e)
+            return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
         record_id = _record_response(
             user=request.user,
             mode=AIResponseRecord.Mode.TEXTING,
@@ -61,6 +79,7 @@ class TextingModeView(APIView):
 
 class LiveModeView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AIRateThrottle]
 
     def post(self, request):
         serializer = LiveRequestSerializer(data=request.data)
@@ -74,14 +93,21 @@ class LiveModeView(APIView):
             )
 
         vd = serializer.validated_data
-        data = ai_service.get_live_response(
-            user_id=request.user.id,
-            situation=vd['situation'],
-            user_request=vd['user_request'],
-            relationship_context=vd['relationship_context'],
-            relationship_other=vd['relationship_other'],
-            environment=vd['environment'],
-        )
+        try:
+            data = ai_service.get_live_response(
+                user_id=request.user.id,
+                situation=vd['situation'],
+                user_request=vd['user_request'],
+                relationship_context=vd['relationship_context'],
+                relationship_other=vd['relationship_other'],
+                environment=vd['environment'],
+            )
+        except anthropic.APITimeoutError:
+            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except ValueError as e:
+            logger.error('AI invalid JSON (live): %s', e)
+            return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
         summary = (vd['situation'] + ' ' + vd['user_request']).strip()
         record_id = _record_response(
             user=request.user,
@@ -96,11 +122,11 @@ class LiveModeView(APIView):
 class LiveVoiceView(APIView):
     parser_classes = [MultiPartParser]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AIRateThrottle]
 
     def post(self, request):
         serializer = LiveVoiceRequestSerializer(data=request.data)
         if not serializer.is_valid():
-            print("LiveVoiceView validation errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         profile = getattr(request.user, 'profile', None)
@@ -118,7 +144,7 @@ class LiveVoiceView(APIView):
                 file=(audio_file.name, audio_file.read(), audio_file.content_type),
             )
         except Exception as e:
-            print("Whisper transcription error:", str(e))
+            logger.error('Whisper transcription error: %s', e)
             return Response(
                 {'detail': 'Audio transcription failed. Please try again.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -131,14 +157,21 @@ class LiveVoiceView(APIView):
             )
 
         vd = serializer.validated_data
-        data = ai_service.get_live_response(
-            user_id=request.user.id,
-            situation='',
-            user_request=transcription.text,
-            relationship_context=vd['relationship_context'],
-            relationship_other=vd['relationship_other'],
-            environment=vd['environment'],
-        )
+        try:
+            data = ai_service.get_live_response(
+                user_id=request.user.id,
+                situation='',
+                user_request=transcription.text,
+                relationship_context=vd['relationship_context'],
+                relationship_other=vd['relationship_other'],
+                environment=vd['environment'],
+            )
+        except anthropic.APITimeoutError:
+            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except ValueError as e:
+            logger.error('AI invalid JSON (live_voice): %s', e)
+            return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
         record_id = _record_response(
             user=request.user,
             mode=AIResponseRecord.Mode.LIVE_VOICE,

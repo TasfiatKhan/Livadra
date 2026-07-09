@@ -1,28 +1,31 @@
 services:
   db:
     image: postgres:15
+    # IMPORTANT: change POSTGRES_PASSWORD before deploying to production.
     environment:
-      POSTGRES_DB: humorai
-      POSTGRES_USER: humorai
-      POSTGRES_PASSWORD: humorai
+      POSTGRES_DB: livadra
+      POSTGRES_USER: livadra
+      POSTGRES_PASSWORD: livadra
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U humorai -d humorai"]
+      test: ["CMD-SHELL", "pg_isready -U livadra -d livadra"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
+    # For production: add --requirepass <password> and update REDIS_URL accordingly.
+    # Do not expose port 6379 publicly on the production host.
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   backend:
     build: ./backend
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120
     volumes:
       - ./backend:/app
     ports:

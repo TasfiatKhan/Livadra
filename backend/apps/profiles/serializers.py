@@ -8,7 +8,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'email',
+            'id', 'email', 'username',
             'humor_style', 'persona_type', 'confidence_level', 'cultural_tone',
             'personality_description', 'social_anxiety_level',
             'is_onboarding_complete', 'created_at', 'updated_at',
@@ -20,6 +20,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
+            'username',
             'humor_style', 'persona_type', 'confidence_level', 'cultural_tone',
             'personality_description', 'social_anxiety_level',
         ]

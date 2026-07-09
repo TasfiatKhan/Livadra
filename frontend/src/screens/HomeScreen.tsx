@@ -12,7 +12,7 @@ import { MainStackParamList } from '../navigation/types';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../context/ThemeContext';
 import { typography, spacing, radii } from '../theme';
-import WitlyLogo from '../components/common/WitlyLogo';
+import LivadraLogo from '../components/common/LivadraLogo';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Home'>;
 
@@ -128,7 +128,7 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={styles.container}>
         <View style={styles.header}>
           <View>
-            <WitlyLogo size={56} />
+            <LivadraLogo size={56} />
             <Text style={styles.tagline}>Your social confidence coach</Text>
           </View>
           <View style={styles.headerRight}>

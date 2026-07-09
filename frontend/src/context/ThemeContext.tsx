@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightColors, darkColors, AppColors } from '../theme';
 
 const THEME_KEY = 'theme_preference';
@@ -20,7 +20,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    SecureStore.getItemAsync(THEME_KEY).then(value => {
+    AsyncStorage.getItem(THEME_KEY).then(value => {
       if (value === 'dark') setIsDark(true);
     });
   }, []);
@@ -28,7 +28,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(() => {
     setIsDark(prev => {
       const next = !prev;
-      SecureStore.setItemAsync(THEME_KEY, next ? 'dark' : 'light');
+      AsyncStorage.setItem(THEME_KEY, next ? 'dark' : 'light');
       return next;
     });
   }, []);

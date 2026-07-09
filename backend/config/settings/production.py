@@ -1,1 +1,17 @@
-# TODO: production settings — SSL, HSTS, CORS, STATIC_ROOT
+from .base import *
+from decouple import config, Csv
+
+DEBUG = False
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
