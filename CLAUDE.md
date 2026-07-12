@@ -2,8 +2,8 @@
 
 Session continuity document. Update after every significant implementation step.
 
-**Repo:** `https://github.com/TasfiatKhan/Witly`
-**Local path:** `/home/zab/Desktop/Projects/Witly`
+**Repo:** `https://github.com/TasfiatKhan/Livadra`
+**Local path:** `/home/zab/Desktop/Projects/Livadra`
 **Landing page repo:** `https://github.com/TasfiatKhan/Witly_Landing` — `/home/zab/Desktop/Projects/witly_landing`
 
 ## Skills
@@ -185,3 +185,4 @@ Apps live under `apps/` and are registered as `apps.users`, `apps.profiles`, `ap
 - **2026-05-18** — Skills library: 3 new lead skills (`backend-lead`, `frontend-lead`, `app-lead`) as stack-agnostic decision frameworks with coordination protocols; all 13 existing skills de-Witly-ified.
 - **2026-05-19** — EAS build fix: installed `expo-splash-screen@~0.27.0`, added `expo-av` + `expo-splash-screen` to `app.json` plugins, added `splash.backgroundColor` — fixes AAPT error (`splashscreen_background` color not found) that caused all EAS cloud builds to fail.
 - **2026-07-12** — Livadra rename audit: found `frontend/android` + `frontend/ios` (gitignored, prebuild-generated) still referenced old names — Android `app_name`/`rootProject.name`/`applicationId`/`namespace`/Java package were `Witly`/`com.witly.app`, iOS project was still `HumorAI` (pre-Witly name). Ran `expo prebuild --clean --platform all` to regenerate both from `app.json` (now correctly `Livadra`/`com.livadra.app`). Also found `assets/images/icon.png` + `adaptive-icon.png` still had the old "W" glyph — regenerated both as a white bold serif "L" on the same `#C4956A` amber background (Liberation Serif Bold, matches original style) and re-ran prebuild so it propagated to all mipmap densities and the iOS `AppIcon.appiconset`.
+- **2026-07-12** — Repo + local folder renamed: GitHub repo `TasfiatKhan/Witly` → `TasfiatKhan/Livadra` (via `gh repo rename`); local path `/home/zab/Desktop/Projects/Witly` → `/home/zab/Desktop/Projects/Livadra`; `origin` remote URL updated. Landing page repo (`Witly_Landing`) intentionally left unchanged — out of scope for this pass.
