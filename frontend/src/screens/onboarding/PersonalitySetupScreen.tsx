@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { useProfile } from '../../hooks/useProfile';
+import { useAuth } from '../../hooks/useAuth';
 import {
   ChoiceOption,
   HUMOR_STYLES,
@@ -68,9 +70,11 @@ function ChipGroup({
 
 export default function PersonalitySetupScreen({ navigation }: Props) {
   const { profile, isLoading, update } = useProfile();
+  const { deleteAccount } = useAuth();
   const { colors } = useTheme();
 
   const [humorStyle, setHumorStyle] = useState('');
+  const [username, setUsername] = useState('');
   const [personaType, setPersonaType] = useState('');
   const [confidenceLevel, setConfidenceLevel] = useState('');
   const [culturalTone, setCulturalTone] = useState('');
@@ -97,6 +101,16 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
       color: colors.textPrimary,
       backgroundColor: colors.surface,
     },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: typography.sizes.base,
+      color: colors.textPrimary,
+      backgroundColor: colors.surface,
+    },
     error: { color: colors.error, fontSize: typography.sizes.label, marginTop: spacing.sm },
     savedBanner: {
       flexDirection: 'row' as const,
@@ -117,11 +131,14 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
     button: { backgroundColor: colors.accent, borderRadius: radii.sm, paddingVertical: 14, alignItems: 'center' as const, marginTop: spacing.lg },
     buttonDisabled: { opacity: 0.5 },
     buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
+    deleteButton: { alignItems: 'center' as const, paddingVertical: spacing.md, marginTop: spacing.md },
+    deleteButtonText: { color: colors.error, fontSize: typography.sizes.label, fontWeight: typography.weights.semibold },
   }), [colors]);
 
   useEffect(() => {
     if (profile) {
       setHumorStyle(profile.humor_style);
+      setUsername(profile.username);
       setPersonaType(profile.persona_type);
       setConfidenceLevel(profile.confidence_level);
       setCulturalTone(profile.cultural_tone);
@@ -145,6 +162,7 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
     setIsSubmitting(true);
     try {
       await update({
+        username,
         humor_style: humorStyle,
         persona_type: personaType,
         confidence_level: confidenceLevel,
@@ -162,6 +180,27 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
 
   const buttonLabel = profile?.is_onboarding_complete ? 'Save changes' : 'Save & continue';
 
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete your account?',
+      'Your profile, saved responses, feedback, and Moments will be permanently deleted. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+            } catch {
+              Alert.alert('Deletion failed', 'Please try again or use the account deletion request page.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -171,6 +210,17 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
           <Text style={styles.savedBannerText}>💾 Saved responses</Text>
           <Text style={styles.savedBannerArrow}>›</Text>
         </TouchableOpacity>
+
+        <Text style={styles.sectionLabel}>Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="What should we call you?"
+          placeholderTextColor={colors.textTertiary}
+          value={username}
+          onChangeText={setUsername}
+          maxLength={50}
+          editable={!isSubmitting}
+        />
 
         <Text style={styles.sectionLabel}>Humor Style</Text>
         <ChipGroup options={HUMOR_STYLES} selected={humorStyle} onSelect={setHumorStyle} disabled={isSubmitting} />
@@ -208,6 +258,9 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
           disabled={isSubmitting}
         >
           <Text style={styles.buttonText}>{isSubmitting ? 'Saving…' : buttonLabel}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteButton} onPress={confirmDeleteAccount} disabled={isSubmitting}>
+          <Text style={styles.deleteButtonText}>Delete my account</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

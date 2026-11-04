@@ -226,7 +226,6 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
       );
       pulseLoop.current.start();
     } catch (e: any) {
-      console.error('Recording error:', e);
       setError('Could not start recording: ' + (e?.message ?? 'unknown error'));
     }
   };
@@ -318,17 +317,17 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
     setCardIndices(prev => ({ ...prev, [msgIdx]: idx }));
   };
 
-  const handleMsgFeedback = async (msgId: number, recordId: number, type: string) => {
+  const handleMsgFeedback = async (msgId: number, recordId: number, optionType: string, type: string) => {
     const current = msgFeedback[msgId] ?? null;
     setMsgFeedback(prev => ({ ...prev, [msgId]: current === type ? null : type }));
-    try { await submitFeedback(recordId, type); } catch {}
+    try { await submitFeedback(recordId, optionType, type); } catch {}
   };
 
   const handleMsgSave = async (msgId: number, recordId: number, optionType: string, optionText: string) => {
     const saved = msgSaved[msgId] ?? new Set<string>();
     if (saved.has(optionType)) return;
     setMsgSaved(prev => ({ ...prev, [msgId]: new Set([...(prev[msgId] ?? []), optionType]) }));
-    try { await saveResponse(recordId, optionType, optionText); } catch {}
+    try { await saveResponse(recordId, optionType); } catch {}
   };
 
   const handleCopy = async (msgId: number, recordId: number | null, text: string, optionType: string) => {
@@ -584,7 +583,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
                         <TouchableOpacity
                           key={type}
                           style={[styles.feedbackBtn, active && styles.feedbackBtnActive]}
-                          onPress={() => handleMsgFeedback(msg.id, recordId, type)}
+                          onPress={() => handleMsgFeedback(msg.id, recordId, opt.type, type)}
                         >
                           <Text style={[styles.feedbackBtnText, active && styles.feedbackBtnTextActive]}>
                             {label}
@@ -623,7 +622,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
         {moment.is_archived ? (
           <View style={styles.archivedBanner}>
             <Text style={styles.archivedText}>{exchangeCount}/19 exchanges used.</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MomentDetail', { momentId: null })}>
+            <TouchableOpacity onPress={() => navigation.push('MomentDetail', { momentId: null })}>
               <Text style={styles.archivedLink}>Start a new one →</Text>
             </TouchableOpacity>
           </View>

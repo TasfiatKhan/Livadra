@@ -2,6 +2,13 @@ from django.conf import settings
 from django.db import models
 
 
+OPTION_TYPE_CHOICES = [
+    ('safe', 'Safe'),
+    ('playful', 'Playful'),
+    ('bold', 'Bold'),
+]
+
+
 def default_feedback_counts():
     return {'natural': 0, 'loved': 0, 'cringe': 0, 'risky': 0, 'saved': 0}
 
@@ -39,11 +46,22 @@ class ResponseFeedback(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='response_feedback')
     response_record = models.ForeignKey(AIResponseRecord, on_delete=models.CASCADE, related_name='feedback')
+    option_type = models.CharField(
+        max_length=20,
+        choices=OPTION_TYPE_CHOICES,
+        null=True,
+        blank=True,
+    )
     feedback_type = models.CharField(max_length=20, choices=FeedbackType.choices)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'response_record', 'feedback_type')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'response_record', 'option_type'],
+                name='one_feedback_per_user_response_option',
+            ),
+        ]
         ordering = ['-created_at']
 
     def __str__(self):

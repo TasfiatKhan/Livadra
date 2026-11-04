@@ -17,7 +17,7 @@
       "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#C4956A"
+        "backgroundColor": "#4F46E5"
       },
       "package": "com.livadra.app",
       "permissions": [

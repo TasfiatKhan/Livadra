@@ -16,7 +16,7 @@ export type Profile = {
 export type ProfileUpdate = Partial<
   Pick<
     Profile,
-    'humor_style' | 'persona_type' | 'confidence_level' | 'cultural_tone' |
+    'username' | 'humor_style' | 'persona_type' | 'confidence_level' | 'cultural_tone' |
     'personality_description' | 'social_anxiety_level'
   >
 >;

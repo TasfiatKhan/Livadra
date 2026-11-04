@@ -1,6 +1,5 @@
 import logging
 
-import anthropic
 import openai
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
@@ -11,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from apps.responses.models import AIResponseRecord
-from services.ai_service import ai_service
+from services.ai_service import AIServiceError, ai_service
 from .serializers import TextingRequestSerializer, LiveRequestSerializer, LiveVoiceRequestSerializer
 
 logger = logging.getLogger(__name__)
@@ -61,8 +60,8 @@ class TextingModeView(APIView):
                 relationship_other=vd['relationship_other'],
                 environment=vd['environment'],
             )
-        except anthropic.APITimeoutError:
-            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except AIServiceError:
+            return Response({'detail': 'Suggestions are temporarily unavailable. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except ValueError as e:
             logger.error('AI invalid JSON (texting): %s', e)
             return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -102,8 +101,8 @@ class LiveModeView(APIView):
                 relationship_other=vd['relationship_other'],
                 environment=vd['environment'],
             )
-        except anthropic.APITimeoutError:
-            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except AIServiceError:
+            return Response({'detail': 'Suggestions are temporarily unavailable. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except ValueError as e:
             logger.error('AI invalid JSON (live): %s', e)
             return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -166,8 +165,8 @@ class LiveVoiceView(APIView):
                 relationship_other=vd['relationship_other'],
                 environment=vd['environment'],
             )
-        except anthropic.APITimeoutError:
-            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except AIServiceError:
+            return Response({'detail': 'Suggestions are temporarily unavailable. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except ValueError as e:
             logger.error('AI invalid JSON (live_voice): %s', e)
             return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

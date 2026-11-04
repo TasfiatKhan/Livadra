@@ -15,19 +15,25 @@ export type SavedResponseItem = {
   created_at: string;
 };
 
-export const submitFeedback = async (recordId: number, feedbackType: string): Promise<void> => {
-  await api.post(FEEDBACK_PATH, { response_record_id: recordId, feedback_type: feedbackType });
+export const submitFeedback = async (
+  recordId: number,
+  optionType: string,
+  feedbackType: string,
+): Promise<void> => {
+  await api.post(FEEDBACK_PATH, {
+    response_record_id: recordId,
+    option_type: optionType,
+    feedback_type: feedbackType,
+  });
 };
 
 export const saveResponse = async (
   recordId: number,
   optionType: string,
-  optionText: string,
 ): Promise<void> => {
   await api.post(SAVE_PATH, {
     response_record_id: recordId,
     option_type: optionType,
-    option_text: optionText,
   });
 };
 
@@ -38,4 +44,21 @@ export const getSavedResponses = async (): Promise<SavedResponseItem[]> => {
 
 export const trackCopy = async (recordId: number, optionType: string): Promise<void> => {
   await api.post(COPY_PATH, { response_record_id: recordId, option_type: optionType });
+};
+
+export type ResponseInteractionStatus = {
+  feedback: Array<{
+    response_record_id: number;
+    option_type: 'safe' | 'playful' | 'bold';
+    feedback_type: string;
+  }>;
+  saved: Array<[number, 'safe' | 'playful' | 'bold']>;
+};
+
+export const getResponseStatus = async (recordIds: number[]): Promise<ResponseInteractionStatus> => {
+  const { data } = await api.get<ResponseInteractionStatus>('/api/responses/status/', {
+    params: { id: recordIds },
+    paramsSerializer: { indexes: null },
+  });
+  return data;
 };

@@ -16,7 +16,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { useAIResponse } from '../../hooks/useAIResponse';
 import { TEXTING_PATH } from '../../services/humorService';
-import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
+import { getResponseStatus, submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import { AIOption } from '../../types/humor';
 import { RELATIONSHIP_CONTEXTS } from '../../constants/humor';
 import { useTheme } from '../../context/ThemeContext';
@@ -129,7 +129,7 @@ export default function TextingModeScreen({ navigation }: Props) {
   const [relationshipContext, setRelationshipContext] = useState('');
   const [relationshipOther, setRelationshipOther] = useState('');
   const [environment, setEnvironment] = useState('');
-  const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, string | null>>({});
   const [savedOptions, setSavedOptions] = useState<Set<string>>(new Set());
 
   const styles = useMemo(() => StyleSheet.create({
@@ -170,8 +170,19 @@ export default function TextingModeScreen({ navigation }: Props) {
   }), [colors]);
 
   useEffect(() => {
-    setFeedbackGiven(null);
+    setFeedbackGiven({});
     setSavedOptions(new Set());
+    if (response?.record_id != null) {
+      getResponseStatus([response.record_id])
+        .then(status => {
+          const feedback = Object.fromEntries(
+            status.feedback.map(item => [item.option_type, item.feedback_type]),
+          );
+          setFeedbackGiven(feedback);
+          setSavedOptions(new Set(status.saved.map(([, optionType]) => optionType)));
+        })
+        .catch(() => {});
+    }
   }, [response]);
 
   const handleSubmit = () => {
@@ -185,16 +196,29 @@ export default function TextingModeScreen({ navigation }: Props) {
     });
   };
 
-  const handleFeedback = async (type: string) => {
+  const handleFeedback = async (optionType: string, type: string) => {
     if (!response?.record_id) return;
-    setFeedbackGiven(feedbackGiven === type ? null : type);
-    try { await submitFeedback(response.record_id, type); } catch {}
+    const previous = feedbackGiven[optionType] ?? null;
+    setFeedbackGiven(current => ({ ...current, [optionType]: previous === type ? null : type }));
+    try {
+      await submitFeedback(response.record_id, optionType, type);
+    } catch {
+      setFeedbackGiven(current => ({ ...current, [optionType]: previous }));
+    }
   };
 
-  const handleSave = async (optionType: string, optionText: string) => {
+  const handleSave = async (optionType: string) => {
     if (!response?.record_id || savedOptions.has(optionType)) return;
     setSavedOptions(prev => new Set(prev).add(optionType));
-    try { await saveResponse(response.record_id, optionType, optionText); } catch {}
+    try {
+      await saveResponse(response.record_id, optionType);
+    } catch {
+      setSavedOptions(prev => {
+        const next = new Set(prev);
+        next.delete(optionType);
+        return next;
+      });
+    }
   };
 
   const canSubmit = relationshipContext !== '' && context.trim() !== '' && userRequest.trim() !== '' && !isLoading;
@@ -300,10 +324,10 @@ export default function TextingModeScreen({ navigation }: Props) {
                   key={option.type}
                   option={option}
                   recordId={response.record_id}
-                  feedbackGiven={feedbackGiven}
+                  feedbackGiven={feedbackGiven[option.type] ?? null}
                   isSaved={savedOptions.has(option.type)}
-                  onFeedback={handleFeedback}
-                  onSave={() => handleSave(option.type, option.text)}
+                  onFeedback={(type) => handleFeedback(option.type, type)}
+                  onSave={() => handleSave(option.type)}
                 />
               ))}
               <View style={styles.deliveryCard}>

@@ -9,6 +9,7 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, passwordConfirm: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   signOut: () => void;
 };
 
@@ -42,13 +43,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(false);
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    await authService.deleteAccount();
+    setIsAuthenticated(false);
+  }, []);
+
   // Called by screens after the token interceptor clears tokens on failed refresh
   const signOut = useCallback(() => {
     setIsAuthenticated(false);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, register, logout, signOut }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, register, logout, deleteAccount, signOut }}>
       {children}
     </AuthContext.Provider>
   );

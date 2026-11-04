@@ -1,9 +1,9 @@
 import json
 import logging
 
-import anthropic
 import openai
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Count
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +12,8 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework import status
 
-from services.ai_service import ai_service
+from services.ai_service import AIServiceError, ai_service
+from apps.users.models import User
 from apps.responses.models import AIResponseRecord
 from .models import Moment, MomentMessage
 from .serializers import (
@@ -39,6 +40,7 @@ def _resolve_rel(ctx, other):
 class MomentListCreateView(APIView):
     parser_classes = [MultiPartParser, JSONParser]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AIRateThrottle]
 
     def get(self, request):
         archived = request.query_params.get('archived', 'false').lower() == 'true'
@@ -86,19 +88,13 @@ class MomentListCreateView(APIView):
         else:
             initial_input_text = vd['initial_input'].strip()
 
-        relationship = _resolve_rel(vd['relationship_context'], vd['relationship_other'])
-        moment = Moment.objects.create(
-            user=request.user,
-            title=initial_input_text[:80].strip(),
-            relationship_context=relationship,
-            mode=vd['mode'],
-        )
-        MomentMessage.objects.create(
-            moment=moment,
-            role=MomentMessage.Role.USER,
-            content=initial_input_text,
-        )
+        if len(initial_input_text.strip()) < 10:
+            return Response(
+                {'detail': 'Please provide a little more detail so Livadra can understand the situation.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
+        relationship = _resolve_rel(vd['relationship_context'], vd['relationship_other'])
         try:
             data = ai_service.get_response_with_history(
                 user_id=request.user.id,
@@ -108,33 +104,53 @@ class MomentListCreateView(APIView):
                 history=[],
                 new_input=initial_input_text,
             )
-        except anthropic.APITimeoutError:
-            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except AIServiceError:
+            return Response({'detail': 'Suggestions are temporarily unavailable. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except ValueError as e:
             logger.error('AI invalid JSON (moments create): %s', e)
             return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        record_id = None
         try:
-            record = AIResponseRecord.objects.create(
-                user=request.user,
-                mode=AIResponseRecord.Mode.MOMENTS,
-                relationship_context=relationship,
-                situation_summary=initial_input_text[:200],
-                response_json=data,
-            )
-            record_id = record.id
-        except Exception as e:
-            logger.error('AIResponseRecord save failed (moments create): %s', e)
+            with transaction.atomic():
+                # Serializing this check prevents concurrent requests exceeding the cap.
+                User.objects.select_for_update().get(pk=request.user.pk)
+                active_count = Moment.objects.filter(user=request.user, is_archived=False).count()
+                if active_count >= ACTIVE_MOMENT_CAP:
+                    return Response(
+                        {'detail': f'You have {active_count} active moments. Archive or close one before starting a new one.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
 
-        MomentMessage.objects.create(
-            moment=moment,
-            role=MomentMessage.Role.ASSISTANT,
-            content=json.dumps(data),
-            response_record_id=record_id,
-        )
+                moment = Moment.objects.create(
+                    user=request.user,
+                    title=initial_input_text[:80].strip(),
+                    relationship_context=relationship,
+                    environment=vd['environment'],
+                    mode=vd['mode'],
+                )
+                MomentMessage.objects.create(
+                    moment=moment,
+                    role=MomentMessage.Role.USER,
+                    content=initial_input_text,
+                )
+                record = AIResponseRecord.objects.create(
+                    user=request.user,
+                    mode=AIResponseRecord.Mode.MOMENTS,
+                    relationship_context=relationship,
+                    situation_summary=initial_input_text[:200],
+                    response_json=data,
+                )
+                MomentMessage.objects.create(
+                    moment=moment,
+                    role=MomentMessage.Role.ASSISTANT,
+                    content=json.dumps(data),
+                    response_record=record,
+                )
+        except Exception:
+            logger.exception('Could not persist a newly generated moment.')
+            return Response({'detail': 'Could not save this moment. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        return Response({'moment_id': moment.id, **data, 'record_id': record_id}, status=status.HTTP_201_CREATED)
+        return Response({'moment_id': moment.id, **data, 'record_id': record.id}, status=status.HTTP_201_CREATED)
 
 
 class MomentDetailView(APIView):
@@ -214,53 +230,56 @@ class MomentContinueView(APIView):
 
         history = list(moment.messages.order_by('created_at').values('role', 'content'))
 
-        MomentMessage.objects.create(
-            moment=moment,
-            role=MomentMessage.Role.USER,
-            content=user_input,
-        )
-
         try:
             data = ai_service.get_response_with_history(
                 user_id=request.user.id,
                 relationship_context=moment.relationship_context,
                 relationship_other='',
-                environment=vd['environment'],
+                environment=moment.environment,
                 history=history,
                 new_input=user_input,
             )
-        except anthropic.APITimeoutError:
-            return Response({'detail': 'AI response timed out. Please try again.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+        except AIServiceError:
+            return Response({'detail': 'Suggestions are temporarily unavailable. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except ValueError as e:
             logger.error('AI invalid JSON (moments continue): %s', e)
             return Response({'detail': 'AI returned an unexpected response. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        record_id = None
         try:
-            record = AIResponseRecord.objects.create(
-                user=request.user,
-                mode=AIResponseRecord.Mode.MOMENTS,
-                relationship_context=moment.relationship_context,
-                situation_summary=user_input[:200],
-                response_json=data,
-            )
-            record_id = record.id
-        except Exception as e:
-            logger.error('AIResponseRecord save failed (moments continue): %s', e)
+            with transaction.atomic():
+                moment = Moment.objects.select_for_update().get(id=pk, user=request.user)
+                if moment.is_archived:
+                    return Response(
+                        {'detail': 'This moment has ended. Start a new one.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                MomentMessage.objects.create(
+                    moment=moment,
+                    role=MomentMessage.Role.USER,
+                    content=user_input,
+                )
+                record = AIResponseRecord.objects.create(
+                    user=request.user,
+                    mode=AIResponseRecord.Mode.MOMENTS,
+                    relationship_context=moment.relationship_context,
+                    situation_summary=user_input[:200],
+                    response_json=data,
+                )
+                MomentMessage.objects.create(
+                    moment=moment,
+                    role=MomentMessage.Role.ASSISTANT,
+                    content=json.dumps(data),
+                    response_record=record,
+                )
 
-        MomentMessage.objects.create(
-            moment=moment,
-            role=MomentMessage.Role.ASSISTANT,
-            content=json.dumps(data),
-            response_record_id=record_id,
-        )
+                if moment.messages.count() >= MESSAGE_CAP:
+                    moment.is_archived = True
+                moment.save()
+        except Exception:
+            logger.exception('Could not persist a generated moment continuation.')
+            return Response({'detail': 'Could not save this update. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if moment.messages.count() >= MESSAGE_CAP:
-            moment.is_archived = True
-
-        moment.save()
-
-        return Response({**data, 'is_archived': moment.is_archived, 'record_id': record_id, 'user_input': user_input})
+        return Response({**data, 'is_archived': moment.is_archived, 'record_id': record.id, 'user_input': user_input})
 
 
 class MomentArchiveView(APIView):

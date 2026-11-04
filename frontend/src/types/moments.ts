@@ -4,6 +4,7 @@ export type Moment = {
   id: number;
   title: string;
   relationship_context: string;
+  environment: string;
   mode: 'texting' | 'live' | 'live_voice';
   is_archived: boolean;
   created_at: string;
@@ -23,6 +24,7 @@ export type MomentDetail = {
   id: number;
   title: string;
   relationship_context: string;
+  environment: string;
   mode: 'texting' | 'live' | 'live_voice';
   is_archived: boolean;
   created_at: string;

@@ -1,4 +1,21 @@
-export const lightColors = {
+export type AppColors = {
+  background: string;
+  surface: string;
+  surfaceSecondary: string;
+  accent: string;
+  accentSoft: string;
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  border: string;
+  success: string;
+  error: string;
+  safe: string;
+  playful: string;
+  bold: string;
+};
+
+export const lightColors: AppColors = {
   background: '#FAFAF8',
   surface: '#FFFFFF',
   surfaceSecondary: '#F4F3F0',
@@ -15,7 +32,7 @@ export const lightColors = {
   bold: '#8B5E6B',
 } as const;
 
-export const darkColors = {
+export const darkColors: AppColors = {
   background: '#1A1A1A',
   surface: '#242424',
   surfaceSecondary: '#2A2A2A',
@@ -31,8 +48,6 @@ export const darkColors = {
   playful: '#C4956A',
   bold: '#8B5E6B',
 } as const;
-
-export type AppColors = typeof lightColors;
 
 export const colors = lightColors;
 

@@ -15,9 +15,8 @@ import { Audio } from 'expo-av';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
 import { AIOption, AIResponse } from '../../types/humor';
-import { LIVE_VOICE_PATH } from '../../services/humorService';
 import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
-import api from '../../services/api';
+import { submitLiveVoice } from '../../services/liveService';
 import { useTheme } from '../../context/ThemeContext';
 import { typography, spacing, radii } from '../../theme';
 
@@ -185,9 +184,7 @@ export default function LiveModeScreen({ navigation }: Props) {
       const formData = new FormData();
       formData.append('audio', { uri, name: filename, type } as any);
 
-      const { data } = await api.post<AIResponse>(LIVE_VOICE_PATH, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const data = await submitLiveVoice(formData);
       setResponse(data);
       setCurrentIndex(0);
     } catch (e: any) {
@@ -211,9 +208,9 @@ export default function LiveModeScreen({ navigation }: Props) {
   };
 
   const handleFeedback = async (type: string) => {
-    if (!response?.record_id) return;
+    if (!response?.record_id || !currentOption) return;
     setFeedbackGiven(feedbackGiven === type ? null : type);
-    try { await submitFeedback(response.record_id, type); } catch {}
+    try { await submitFeedback(response.record_id, currentOption.type, type); } catch {}
   };
 
   const handleSave = async () => {
@@ -221,7 +218,7 @@ export default function LiveModeScreen({ navigation }: Props) {
     const option = response.options[currentIndex];
     if (savedOptions.has(option.type)) return;
     setSavedOptions(prev => new Set(prev).add(option.type));
-    try { await saveResponse(response.record_id, option.type, option.text); } catch {}
+    try { await saveResponse(response.record_id, option.type); } catch {}
   };
 
   const toggleRecording = () => {

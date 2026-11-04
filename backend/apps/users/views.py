@@ -24,7 +24,7 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
-class MeView(generics.RetrieveAPIView):
+class MeView(generics.RetrieveDestroyAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 

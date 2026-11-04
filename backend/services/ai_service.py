@@ -4,8 +4,13 @@ from decouple import config
 import anthropic
 
 from apps.profiles.cache import get_cached_profile, set_cached_profile
+from apps.responses.serializers import AIResponseOutputSerializer
 
 _PROMPT_DIR = Path(__file__).resolve().parent.parent / 'prompts' / 'v2'
+
+
+class AIServiceError(Exception):
+    """A provider failure that can be safely surfaced as a retryable API error."""
 
 
 class AIService:
@@ -56,20 +61,30 @@ class AIService:
         return relationship_context
 
     def _call_with_messages(self, system_prompt: str, messages: list, max_tokens: int) -> dict:
-        message = self._client.messages.create(
-            model=self.MODEL,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=messages,
-        )
+        try:
+            message = self._client.messages.create(
+                model=self.MODEL,
+                max_tokens=max_tokens,
+                system=system_prompt,
+                messages=messages,
+            )
+        except anthropic.APIError as exc:
+            raise AIServiceError('The AI provider is temporarily unavailable.') from exc
         text = message.content[0].text.strip()
         if text.startswith('```'):
             lines = text.splitlines()
             text = '\n'.join(lines[1:-1]).strip()
         try:
-            return json.loads(text)
+            payload = json.loads(text)
         except json.JSONDecodeError as exc:
             raise ValueError(f'AI returned invalid JSON: {text[:200]}') from exc
+
+        serializer = AIResponseOutputSerializer(data=payload)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as exc:
+            raise ValueError('AI returned an invalid response structure.') from exc
+        return serializer.validated_data
 
     def _call(self, system_prompt: str, user_message: str, max_tokens: int) -> dict:
         return self._call_with_messages(

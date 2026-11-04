@@ -14,6 +14,9 @@ RELATIONSHIP_CHOICES = [
 ]
 
 _AUDIO_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+_ALLOWED_AUDIO_TYPES = {
+    'audio/m4a', 'audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/webm',
+}
 
 
 class MomentMessageSerializer(serializers.ModelSerializer):
@@ -27,7 +30,7 @@ class MomentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Moment
-        fields = ['id', 'title', 'relationship_context', 'mode', 'is_archived', 'created_at', 'last_active_at', 'message_count']
+        fields = ['id', 'title', 'relationship_context', 'environment', 'mode', 'is_archived', 'created_at', 'last_active_at', 'message_count']
 
 
 class MomentDetailSerializer(serializers.ModelSerializer):
@@ -35,7 +38,7 @@ class MomentDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Moment
-        fields = ['id', 'title', 'relationship_context', 'mode', 'is_archived', 'created_at', 'last_active_at', 'messages']
+        fields = ['id', 'title', 'relationship_context', 'environment', 'mode', 'is_archived', 'created_at', 'last_active_at', 'messages']
 
 
 class MomentCreateSerializer(serializers.Serializer):
@@ -49,6 +52,8 @@ class MomentCreateSerializer(serializers.Serializer):
     def validate_audio(self, value):
         if value.size > _AUDIO_MAX_BYTES:
             raise serializers.ValidationError('Audio file too large (max 10 MB).')
+        if value.content_type not in _ALLOWED_AUDIO_TYPES:
+            raise serializers.ValidationError('Unsupported audio format.')
         return value
 
     def validate(self, data):
@@ -69,6 +74,8 @@ class MomentContinueSerializer(serializers.Serializer):
     def validate_audio(self, value):
         if value.size > _AUDIO_MAX_BYTES:
             raise serializers.ValidationError('Audio file too large (max 10 MB).')
+        if value.content_type not in _ALLOWED_AUDIO_TYPES:
+            raise serializers.ValidationError('Unsupported audio format.')
         return value
 
     def validate(self, data):

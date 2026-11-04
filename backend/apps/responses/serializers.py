@@ -2,15 +2,33 @@ from rest_framework import serializers
 from .models import ResponseFeedback, SavedResponse, CopiedResponse
 
 
+class AIOptionOutputSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=['safe', 'playful', 'bold'])
+    text = serializers.CharField(max_length=500)
+    note = serializers.CharField(max_length=500)
+
+
+class AIResponseOutputSerializer(serializers.Serializer):
+    options = AIOptionOutputSerializer(many=True, min_length=3, max_length=3)
+    delivery = serializers.CharField(max_length=1000)
+
+    def validate_options(self, options):
+        if {option['type'] for option in options} != {'safe', 'playful', 'bold'}:
+            raise serializers.ValidationError(
+                'Expected exactly safe, playful, and bold options.'
+            )
+        return options
+
+
 class FeedbackSerializer(serializers.Serializer):
     response_record_id = serializers.IntegerField()
+    option_type = serializers.ChoiceField(choices=SavedResponse.OptionType.choices)
     feedback_type = serializers.ChoiceField(choices=ResponseFeedback.FeedbackType.choices)
 
 
 class SavedResponseSerializer(serializers.Serializer):
     response_record_id = serializers.IntegerField()
     option_type = serializers.ChoiceField(choices=SavedResponse.OptionType.choices)
-    option_text = serializers.CharField()
 
 
 class CopyResponseSerializer(serializers.Serializer):

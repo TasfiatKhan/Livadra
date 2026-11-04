@@ -44,6 +44,14 @@ api.interceptors.request.use(async (config) => {
 let isRefreshing = false;
 type QueueEntry = { resolve: (token: string) => void; reject: (err: unknown) => void };
 let refreshQueue: QueueEntry[] = [];
+const AUTH_PATHS = [
+  '/api/auth/token/',
+  '/api/auth/token/refresh/',
+  '/api/users/register/',
+];
+
+const shouldSkipRefresh = (url?: string): boolean =>
+  AUTH_PATHS.some(path => url?.includes(path));
 
 const flushQueue = (token: string): void => {
   refreshQueue.forEach(({ resolve }) => resolve(token));
@@ -61,7 +69,7 @@ api.interceptors.response.use(
   async (error) => {
     const original: AxiosRequestConfig & { _retried?: boolean } = error.config;
 
-    if (error.response?.status !== 401 || original._retried) {
+    if (error.response?.status !== 401 || original._retried || shouldSkipRefresh(original.url)) {
       return Promise.reject(error);
     }
 

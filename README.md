@@ -41,6 +41,31 @@ First run — apply migrations:
 docker compose exec backend python manage.py migrate
 ```
 
+## Verification
+
+```bash
+npm --prefix frontend run ts:check
+docker compose exec backend python manage.py check
+docker compose exec backend python manage.py test
+```
+
+## Production deployment
+
+`docker-compose.yml` is for local development. Production uses the override
+file, private database/cache networking, and a TLS reverse proxy:
+
+```bash
+DOMAIN=api.example.com \
+DB_NAME=livadra DB_USER=livadra DB_PASSWORD=replace-me \
+REDIS_PASSWORD=replace-me \
+docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+```
+
+Before launch, publish a privacy policy that discloses that user-provided
+conversation text and voice transcriptions are sent to Anthropic and OpenAI.
+The API supports account deletion at `DELETE /api/users/me/`; pair it with a
+user-facing confirmation flow and an export/retention policy.
+
 ## Project structure
 
 ```

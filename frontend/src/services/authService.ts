@@ -1,4 +1,4 @@
-import api, { setTokens, clearTokens } from './api';
+import api, { setTokens, clearTokens, getRefreshToken } from './api';
 import { AuthTokens } from '../types/auth';
 
 export const register = async (email: string, password: string, passwordConfirm: string): Promise<void> => {
@@ -12,5 +12,20 @@ export const login = async (email: string, password: string): Promise<void> => {
 };
 
 export const logout = async (): Promise<void> => {
-  await clearTokens();
+  const refresh = await getRefreshToken();
+  try {
+    if (refresh) {
+      await api.post('/api/auth/token/blacklist/', { refresh });
+    }
+  } finally {
+    await clearTokens();
+  }
+};
+
+export const deleteAccount = async (): Promise<void> => {
+  try {
+    await api.delete('/api/users/me/');
+  } finally {
+    await clearTokens();
+  }
 };
