@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Linking,
   Platform,
   SafeAreaView,
   StyleSheet,
@@ -14,6 +15,7 @@ import { AuthStackParamList } from '../../navigation/types';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
 import { typography, spacing, radii } from '../../theme';
+import { PRIVACY_POLICY_URL } from '../../constants/links';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -58,6 +60,8 @@ export default function RegisterScreen({ navigation }: Props) {
     buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
     link: { textAlign: 'center' as const, color: colors.textTertiary, fontSize: typography.sizes.label, marginTop: spacing.sm },
     linkBold: { fontWeight: typography.weights.bold, color: colors.textPrimary },
+    legal: { textAlign: 'center' as const, color: colors.textTertiary, fontSize: typography.sizes.label },
+    legalLink: { color: colors.textPrimary, textDecorationLine: 'underline' as const },
   }), [colors]);
 
   const handleRegister = async () => {
@@ -121,6 +125,14 @@ export default function RegisterScreen({ navigation }: Props) {
           >
             <Text style={styles.buttonText}>{isSubmitting ? 'Creating account…' : 'Register'}</Text>
           </TouchableOpacity>
+
+          <Text style={styles.legal}>
+            By creating an account, you acknowledge the{' '}
+            <Text style={styles.legalLink} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} accessibilityRole="link">
+              Privacy Policy
+            </Text>
+            .
+          </Text>
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
             <Text style={styles.link}>

@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -23,6 +24,7 @@ import {
   SOCIAL_ANXIETY_LEVELS,
 } from '../../constants/humor';
 import { useTheme } from '../../context/ThemeContext';
+import { ACCOUNT_DELETION_URL, PRIVACY_POLICY_URL } from '../../constants/links';
 import { typography, spacing, radii, shadow } from '../../theme';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'PersonalitySetup'>;
@@ -133,6 +135,8 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
     buttonText: { color: colors.surface, fontSize: typography.sizes.base, fontWeight: typography.weights.semibold },
     deleteButton: { alignItems: 'center' as const, paddingVertical: spacing.md, marginTop: spacing.md },
     deleteButtonText: { color: colors.error, fontSize: typography.sizes.label, fontWeight: typography.weights.semibold },
+    legalLink: { alignItems: 'center' as const, paddingVertical: spacing.sm },
+    legalLinkText: { color: colors.textTertiary, fontSize: typography.sizes.label, textDecorationLine: 'underline' as const },
   }), [colors]);
 
   useEffect(() => {
@@ -193,7 +197,14 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
             try {
               await deleteAccount();
             } catch {
-              Alert.alert('Deletion failed', 'Please try again or use the account deletion request page.');
+              Alert.alert(
+                'Deletion failed',
+                'Please try again, or request deletion at livadra.com/account-deletion.',
+                [
+                  { text: 'OK', style: 'cancel' },
+                  { text: 'Open page', onPress: () => Linking.openURL(ACCOUNT_DELETION_URL) },
+                ],
+              );
             }
           },
         },
@@ -261,6 +272,9 @@ export default function PersonalitySetupScreen({ navigation }: Props) {
         </TouchableOpacity>
         <TouchableOpacity style={styles.deleteButton} onPress={confirmDeleteAccount} disabled={isSubmitting}>
           <Text style={styles.deleteButtonText}>Delete my account</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.legalLink} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} accessibilityRole="link">
+          <Text style={styles.legalLinkText}>Privacy Policy</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

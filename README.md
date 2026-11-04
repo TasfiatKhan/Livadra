@@ -61,10 +61,14 @@ REDIS_PASSWORD=replace-me \
 docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
 ```
 
-Before launch, publish a privacy policy that discloses that user-provided
-conversation text and voice transcriptions are sent to Anthropic and OpenAI.
-The API supports account deletion at `DELETE /api/users/me/`; pair it with a
-user-facing confirmation flow and an export/retention policy.
+Legal pages (hosted by the landing site, linked from the app's Register and
+My Profile screens via `frontend/src/constants/links.ts`):
+
+- Privacy Policy: https://livadra.com/privacy-policy
+- Account deletion: https://livadra.com/account-deletion
+
+The API supports account deletion at `DELETE /api/users/me/` (the in-app
+"Delete my account" flow), plus per-item deletion of Moments and saved responses.
 
 ## Project structure
 
@@ -95,7 +99,7 @@ frontend/
 - Frontend never calls the API from screens — all network calls go through `frontend/src/services/`
 
 ## Related
-Landing page: [github.com/TasfiatKhan/Wittly_Landing](https://github.com/TasfiatKhan/Wittly_Landing)
+Website: [livadra.com](https://livadra.com) — source: [github.com/TasfiatKhan/Livadra_Landing](https://github.com/TasfiatKhan/Livadra_Landing)
 
 
 ## Author
