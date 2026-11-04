@@ -32,6 +32,9 @@ services:
       - "8000:8000"
     env_file:
       - ./backend/.env
+    environment:
+      # Local stack only — docker-compose.production.yml sets config.settings.production.
+      DJANGO_SETTINGS_MODULE: config.settings.development
     depends_on:
       db:
         condition: service_healthy
