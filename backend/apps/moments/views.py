@@ -163,6 +163,20 @@ class MomentDetailView(APIView):
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
         return Response(MomentDetailSerializer(moment).data)
 
+    def delete(self, request, pk):
+        try:
+            moment = Moment.objects.get(id=pk, user=request.user)
+        except Moment.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        record_ids = list(
+            moment.messages.exclude(response_record=None).values_list('response_record_id', flat=True)
+        )
+        with transaction.atomic():
+            # Records cascade to their feedback, saves, and copies.
+            AIResponseRecord.objects.filter(id__in=record_ids, user=request.user).delete()
+            moment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class MomentContinueView(APIView):
     parser_classes = [MultiPartParser, JSONParser]

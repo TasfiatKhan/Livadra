@@ -42,6 +42,10 @@ export const getSavedResponses = async (): Promise<SavedResponseItem[]> => {
   return data;
 };
 
+export const deleteSavedResponse = async (savedId: number): Promise<void> => {
+  await api.delete(`${SAVED_PATH}${savedId}/`);
+};
+
 export const trackCopy = async (recordId: number, optionType: string): Promise<void> => {
   await api.post(COPY_PATH, { response_record_id: recordId, option_type: optionType });
 };

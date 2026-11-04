@@ -17,7 +17,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Audio } from 'expo-av';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../navigation/types';
-import { createMoment, getMoment, continueMoment, toggleMomentArchive } from '../../services/momentsService';
+import { createMoment, getMoment, continueMoment, toggleMomentArchive, deleteMoment } from '../../services/momentsService';
 import { submitFeedback, saveResponse, trackCopy } from '../../services/responsesService';
 import { MomentDetail, MomentMessage } from '../../types/moments';
 import { AIOption, AIResponse } from '../../types/humor';
@@ -84,6 +84,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
     exchangeCount: { fontSize: typography.sizes.small, color: colors.textTertiary, flexShrink: 0 },
     archiveBtn: { paddingHorizontal: 10, paddingVertical: spacing.xs, marginLeft: spacing.xs },
     archiveBtnText: { fontSize: typography.sizes.label, color: colors.textTertiary },
+    deleteBtnText: { fontSize: typography.sizes.label, color: colors.error },
     threadScroll: { paddingHorizontal: spacing.md, paddingTop: 12, paddingBottom: spacing.md, gap: 12 },
     userBubbleRow: { alignItems: 'flex-end' as const },
     userBubble: { backgroundColor: colors.accent, borderRadius: radii.lg, borderBottomRightRadius: spacing.xs, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '85%' as const },
@@ -147,6 +148,7 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
   const [newInput, setNewInput] = useState('');
   const [isContinuing, setIsContinuing] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [cardIndices, setCardIndices] = useState<Record<number, number>>({});
   const [msgFeedback, setMsgFeedback] = useState<Record<number, string | null>>({});
   const [msgSaved, setMsgSaved] = useState<Record<number, Set<string>>>({});
@@ -370,6 +372,31 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
     );
   };
 
+  const handleDelete = () => {
+    if (!localMomentId || isDeleting) return;
+    Alert.alert(
+      'Delete this moment?',
+      'The whole conversation and any responses you saved from it will be permanently deleted. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteMoment(localMomentId);
+              navigation.goBack();
+            } catch (e: any) {
+              setError(e?.response?.data?.detail ?? 'Failed to delete. Please try again.');
+              setIsDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const toggleRecording = () => {
     if (recordingState === 'idle') startRecording();
     else if (recordingState === 'recording') stopRecording();
@@ -511,6 +538,16 @@ export default function MomentDetailScreen({ route, navigation }: Props) {
             {isArchiving
               ? <ActivityIndicator size="small" color="#999" />
               : <Text style={styles.archiveBtnText}>{moment.is_archived ? 'Unarchive' : 'Archive'}</Text>
+            }
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.archiveBtn}
+            onPress={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting
+              ? <ActivityIndicator size="small" color="#999" />
+              : <Text style={styles.deleteBtnText}>Delete</Text>
             }
           </TouchableOpacity>
         </View>

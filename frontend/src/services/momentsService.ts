@@ -21,3 +21,6 @@ export const continueMoment = (id: number, data: { new_input: string; environmen
 
 export const toggleMomentArchive = (id: number) =>
   api.patch<{ is_archived: boolean }>(`/api/moments/${id}/archive/`);
+
+export const deleteMoment = (id: number) =>
+  api.delete(`/api/moments/${id}/`);

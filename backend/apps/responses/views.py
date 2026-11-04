@@ -107,6 +107,16 @@ class SavedResponseListView(APIView):
         return Response(SavedResponseListSerializer(saved, many=True).data)
 
 
+class SavedResponseDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        deleted, _ = SavedResponse.objects.filter(id=pk, user=request.user).delete()
+        if not deleted:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class CopyResponseView(APIView):
     permission_classes = [IsAuthenticated]
 

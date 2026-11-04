@@ -77,7 +77,7 @@ class AIService:
         try:
             payload = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise ValueError(f'AI returned invalid JSON: {text[:200]}') from exc
+            raise ValueError(f'AI returned invalid JSON ({len(text)} chars).') from exc
 
         serializer = AIResponseOutputSerializer(data=payload)
         try:

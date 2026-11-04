@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Request deletion of your Livadra account and personal data.">
+  <title>Request account deletion — Livadra</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #1a1a1a; background: #fafaf8; }
+    body { margin: 0; padding: 48px 20px; }
+    main { max-width: 620px; margin: 0 auto; padding: 32px; background: white; border: 1px solid #e8e6e1; border-radius: 18px; }
+    h1 { margin-top: 0; font-size: 1.8rem; }
+    p, li { line-height: 1.6; color: #555; }
+    label { display: block; margin: 18px 0 6px; font-weight: 600; }
+    input, textarea { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font: inherit; }
+    button { margin-top: 20px; padding: 12px 18px; border: 0; border-radius: 8px; background: #c4956a; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+    #status { margin-top: 18px; }
+    .small { font-size: .9rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Request account deletion</h1>
+  <p>Use this form if you cannot delete your account from the Livadra app. We’ll verify the request and delete the account and associated profile, Moments, saved responses, feedback, copy history, and response records.</p>
+  <p>We may need to confirm the request came from the account owner before deleting anything. Provider-side processing is governed by <a href="https://privacy.anthropic.com/en/articles/7996866-how-long-do-you-store-my-organizations-data">Anthropic’s API retention policy</a> and <a href="https://developers.openai.com/api/docs/guides/your-data">OpenAI’s API data controls</a>.</p>
+  <form id="deletion-form">
+    <label for="email">Account email</label>
+    <input id="email" type="email" autocomplete="email" required maxlength="254">
+    <label for="details">Additional details (optional)</label>
+    <textarea id="details" rows="4" maxlength="1000"></textarea>
+    <button type="submit">Send deletion request</button>
+  </form>
+  <p id="status" role="status" aria-live="polite"></p>
+  <p class="small">If the form is unavailable, email <a href="mailto:privacy@zabmation.com?subject=Livadra%20account%20deletion">privacy@zabmation.com</a> with “Livadra account deletion” as the subject.</p>
+</main>
+<script>
+  const form = document.getElementById('deletion-form');
+  const status = document.getElementById('status');
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    status.textContent = 'Sending request…';
+    const email = document.getElementById('email').value.trim();
+    const details = document.getElementById('details').value.trim();
+    const subject = encodeURIComponent('Livadra account deletion request');
+    const body = encodeURIComponent(`Please delete the Livadra account associated with: ${email}\n\n${details}`);
+    window.location.href = `mailto:privacy@zabmation.com?subject=${subject}&body=${body}`;
+    status.textContent = 'Your email app should open with the request prepared. Send that email to complete your request.';
+  });
+</script>
+</body>
+</html>

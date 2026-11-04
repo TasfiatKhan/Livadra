@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   SafeAreaView,
   StyleSheet,
@@ -11,7 +12,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../navigation/types';
-import { getSavedResponses, SavedResponseItem } from '../services/responsesService';
+import { deleteSavedResponse, getSavedResponses, SavedResponseItem } from '../services/responsesService';
 import { useTheme } from '../context/ThemeContext';
 import { typography, spacing, radii, shadow } from '../theme';
 
@@ -40,7 +41,7 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function SavedCard({ item }: { item: SavedResponseItem }) {
+function SavedCard({ item, onRemove }: { item: SavedResponseItem; onRemove: (item: SavedResponseItem) => void }) {
   const { colors } = useTheme();
   const OPTION_COLORS = { safe: colors.safe, playful: colors.playful, bold: colors.bold };
   const styles = useMemo(() => StyleSheet.create({
@@ -52,6 +53,8 @@ function SavedCard({ item }: { item: SavedResponseItem }) {
     timestamp: { fontSize: 11, color: colors.textTertiary },
     situation: { fontSize: typography.sizes.label, color: colors.textTertiary, fontStyle: 'italic' as const, lineHeight: 18 },
     optionText: { fontSize: typography.sizes.base, lineHeight: 22, color: colors.textPrimary, fontWeight: typography.weights.medium },
+    removeBtn: { alignSelf: 'flex-end' as const, paddingVertical: spacing.xs },
+    removeBtnText: { fontSize: typography.sizes.small, color: colors.error, fontWeight: typography.weights.semibold },
   }), [colors]);
 
   return (
@@ -70,6 +73,9 @@ function SavedCard({ item }: { item: SavedResponseItem }) {
         <Text style={styles.situation} numberOfLines={2}>{item.situation_summary}</Text>
       )}
       <Text style={styles.optionText}>{item.option_text}</Text>
+      <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(item)}>
+        <Text style={styles.removeBtnText}>Remove</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -118,6 +124,24 @@ export default function SavedResponsesScreen({ navigation }: Props) {
     }, []),
   );
 
+  const handleRemove = (item: SavedResponseItem) => {
+    Alert.alert('Remove this saved response?', 'It will be permanently deleted.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteSavedResponse(item.id);
+            setItems(prev => prev.filter(i => i.id !== item.id));
+          } catch {
+            Alert.alert('Could not remove', 'Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
@@ -144,7 +168,7 @@ export default function SavedResponsesScreen({ navigation }: Props) {
         <FlatList
           data={items}
           keyExtractor={item => String(item.id)}
-          renderItem={({ item }) => <SavedCard item={item} />}
+          renderItem={({ item }) => <SavedCard item={item} onRemove={handleRemove} />}
           contentContainerStyle={styles.list}
         />
       )}
