@@ -51,15 +51,25 @@ docker compose exec backend python manage.py test
 
 ## Production deployment
 
-`docker-compose.yml` is for local development. Production uses the override
-file, private database/cache networking, and a TLS reverse proxy:
+`docker-compose.yml` is for local development. Production layers
+`docker-compose.production.yml` on top (requires Docker Compose >= 2.24): only
+Caddy publishes ports 80/443 and obtains the TLS certificate; Postgres, Redis and
+gunicorn stay on the internal network; no source bind mount; every service has
+`restart: unless-stopped`; Postgres data lives in the `postgres_data` volume.
+
+On the server, put `DOMAIN`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `REDIS_PASSWORD`
+in a root-level `.env` (gitignored; Compose refuses to start if any is missing) and
+the app settings (`SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`,
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, …) in `backend/.env`. Then:
 
 ```bash
-DOMAIN=api.example.com \
-DB_NAME=livadra DB_USER=livadra DB_PASSWORD=replace-me \
-REDIS_PASSWORD=replace-me \
-docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.production.yml exec backend python manage.py migrate
 ```
+
+The Android app's production API URL comes from the EAS `production` environment
+(`EXPO_PUBLIC_API_URL`, must be `https://` on a public host). `frontend/app.config.js`
+fails any EAS production build where it's missing, `http://`, localhost, or a private IP.
 
 Legal pages (hosted by the landing site, linked from the app's Register and
 My Profile screens via `frontend/src/constants/links.ts`):

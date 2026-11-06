@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15
-    # IMPORTANT: change POSTGRES_PASSWORD before deploying to production.
+    # Dev-only credentials. docker-compose.production.yml replaces them with required DB_* variables.
     environment:
       POSTGRES_DB: livadra
       POSTGRES_USER: livadra
@@ -11,7 +11,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U livadra -d livadra"]
+      # $$ = evaluated inside the container, so it matches prod DB_NAME/DB_USER too.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
